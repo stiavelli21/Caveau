@@ -53,11 +53,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> authenticateWithBiometrics() async {
+  Future<bool> authenticateWithBiometrics({bool silentFail = true}) async {
     _errorMessage = null;
     final settings = await _storageService.getSecuritySettings();
     if (!settings.biometricsEnabled) {
-      _errorMessage = 'Autenticazione biometrica disabilitata nelle impostazioni';
+      if (!silentFail) {
+        _errorMessage = 'Autenticazione biometrica disabilitata nelle impostazioni';
+      }
       notifyListeners();
       return false;
     }
@@ -70,7 +72,9 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } else {
-      _errorMessage = 'Autenticazione biometrica non riuscita o annullata';
+      if (!silentFail) {
+        _errorMessage = 'Autenticazione biometrica non riuscita o annullata';
+      }
       notifyListeners();
       return false;
     }

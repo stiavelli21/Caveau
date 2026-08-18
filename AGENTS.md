@@ -4,7 +4,7 @@ Questo documento fornisce agli agenti AI (e agli sviluppatori) una panoramica co
 
 ---
 
-## 🎯 Panoramica dell'Applicazione
+## Panoramica dell'Applicazione
 
 **Caveau** è un'applicazione mobile sviluppata in **Flutter** per la memorizzazione locale, sicura e offline di credenziali, password, carte di pagamento, note crittografate e token API.
 
@@ -19,7 +19,7 @@ Questo documento fornisce agli agenti AI (e agli sviluppatori) una panoramica co
 
 ---
 
-## 📂 Architettura della Cartella `lib/`
+## Architettura della Cartella `lib/`
 
 La struttura del progetto segue il pattern **Clean Architecture / MVVM** con gestione dello stato reattiva tramite `provider`:
 
@@ -60,12 +60,13 @@ lib/
     └── widgets/
         ├── password_strength_bar.dart # Indicatore visivo della robustezza password
         ├── privacy_shield.dart    # Overlay protettivo per oscuramento multitasking
+        ├── swipe_back_wrapper.dart # Riconoscimento gesture swipe da sinistra a destra per tornare indietro
         └── vault_card.dart        # Card dell'elemento nella lista con quick copy
 ```
 
 ---
 
-## 🔍 Dettaglio dei Componenti
+## Dettaglio dei Componenti
 
 ### 1. `core/` (Logica Trasversale e Servizi)
 - **`constants/`**:
@@ -108,7 +109,7 @@ lib/
 
 ---
 
-## ⚠️ Regole di Sicurezza per Agenti AI
+## Regole di Sicurezza per Agenti AI
 
 Quando modifichi o estendi questa applicazione:
 1. **Non salvare mai dati sensibili in chiaro** o in storage non cifrati come `SharedPreferences` standard. Usa sempre `SecureStorageService`.

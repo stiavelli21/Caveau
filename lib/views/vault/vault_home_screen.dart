@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -206,7 +207,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
             ),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
+                CupertinoPageRoute(
                   builder: (_) => const SecurityAuditScreen(),
                 ),
               );
@@ -218,7 +219,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
             icon: const Icon(Icons.auto_fix_high_rounded),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
+                CupertinoPageRoute(
                   builder: (_) => const PasswordGeneratorScreen(),
                 ),
               );
@@ -230,7 +231,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
+                CupertinoPageRoute(
                   builder: (_) => const SettingsScreen(),
                 ),
               );

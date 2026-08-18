@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/vault_provider.dart';
+import '../widgets/swipe_back_wrapper.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -21,7 +22,17 @@ class SettingsScreen extends StatelessWidget {
         builder: (ctx, setState) {
           return AlertDialog(
             backgroundColor: AppColors.surface,
-            title: const Text('Modifica PIN Master', style: TextStyle(fontSize: 18)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.border),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.password_rounded, color: AppColors.primaryLight, size: 22),
+                SizedBox(width: 10),
+                Text('Modifica PIN Master', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              ],
+            ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -53,40 +64,58 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Annulla'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final cur = currentPinCtrl.text.trim();
-                  final n1 = newPinCtrl.text.trim();
-                  final n2 = confirmPinCtrl.text.trim();
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Annulla'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () async {
+                        final cur = currentPinCtrl.text.trim();
+                        final n1 = newPinCtrl.text.trim();
+                        final n2 = confirmPinCtrl.text.trim();
 
-                  if (n1.length < 4) {
-                    setState(() => error = 'Il nuovo PIN deve avere almeno 4 caratteri');
-                    return;
-                  }
-                  if (n1 != n2) {
-                    setState(() => error = 'I nuovi PIN non corrispondono');
-                    return;
-                  }
+                        if (n1.length < 4) {
+                          setState(() => error = 'Il nuovo PIN deve avere almeno 4 caratteri');
+                          return;
+                        }
+                        if (n1 != n2) {
+                          setState(() => error = 'I nuovi PIN non corrispondono');
+                          return;
+                        }
 
-                  final auth = context.read<AuthProvider>();
-                  final success = await auth.changePin(currentPin: cur, newPin: n1);
-                  if (success) {
-                    if (context.mounted) {
-                      Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('PIN Master aggiornato con successo')),
-                      );
-                    }
-                  } else {
-                    setState(() => error = 'Il PIN attuale inserito non è corretto');
-                  }
-                },
-                child: const Text('Aggiorna PIN'),
+                        final auth = context.read<AuthProvider>();
+                        final success = await auth.changePin(currentPin: cur, newPin: n1);
+                        if (success) {
+                          if (context.mounted) {
+                            Navigator.of(ctx).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('PIN Master aggiornato con successo')),
+                            );
+                          }
+                        } else {
+                          setState(() => error = 'Il PIN attuale inserito non è corretto');
+                        }
+                      },
+                      child: const Text('Salva PIN'),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
@@ -105,20 +134,30 @@ class SettingsScreen extends StatelessWidget {
         builder: (ctx, setState) {
           return AlertDialog(
             backgroundColor: AppColors.surface,
-            title: const Text('Esporta Backup Cifrato', style: TextStyle(fontSize: 18)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.border),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.cloud_upload_outlined, color: AppColors.successLight, size: 22),
+                SizedBox(width: 10),
+                Text('Esporta Backup', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              ],
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Imposta una password per cifrare il file di backup. Ti servirà per il ripristino.',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  'Imposta una password per cifrare il file di backup. Sarà indispensabile per il ripristino.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: pwdCtrl,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Password Backup'),
+                  decoration: const InputDecoration(labelText: 'Password del Backup'),
                 ),
                 if (error != null) ...[
                   const SizedBox(height: 10),
@@ -126,28 +165,46 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ],
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Annulla'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final pwd = pwdCtrl.text.trim();
-                  if (pwd.length < 6) {
-                    setState(() => error = 'La password deve avere almeno 6 caratteri');
-                    return;
-                  }
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Annulla'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () async {
+                        final pwd = pwdCtrl.text.trim();
+                        if (pwd.length < 6) {
+                          setState(() => error = 'La password deve avere almeno 6 caratteri');
+                          return;
+                        }
 
-                  final vault = context.read<VaultProvider>();
-                  final backupPayload = await vault.exportBackup(pwd);
+                        final vault = context.read<VaultProvider>();
+                        final backupPayload = await vault.exportBackup(pwd);
 
-                  if (context.mounted) {
-                    Navigator.of(ctx).pop();
-                    _showBackupPayloadDialog(context, backupPayload);
-                  }
-                },
-                child: const Text('Genera Backup'),
+                        if (context.mounted) {
+                          Navigator.of(ctx).pop();
+                          _showBackupPayloadDialog(context, backupPayload);
+                        }
+                      },
+                      child: const Text('Genera'),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
@@ -161,14 +218,24 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: const Text('Backup Generato', style: TextStyle(fontSize: 18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 22),
+            SizedBox(width: 10),
+            Text('Backup Generato', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Copia questa stringa crittografata e conservala in un luogo sicuro:',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
             ),
             const SizedBox(height: 12),
             Container(
@@ -188,21 +255,39 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Chiudi'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: payload));
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Backup copiato negli appunti')),
-              );
-            },
-            icon: const Icon(Icons.copy_rounded, size: 16),
-            label: const Text('Copia'),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Chiudi'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: payload));
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Backup copiato negli appunti')),
+                    );
+                  },
+                  icon: const Icon(Icons.copy_rounded, size: 16),
+                  label: const Text('Copia'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -220,7 +305,17 @@ class SettingsScreen extends StatelessWidget {
         builder: (ctx, setState) {
           return AlertDialog(
             backgroundColor: AppColors.surface,
-            title: const Text('Ripristina da Backup', style: TextStyle(fontSize: 18)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.border),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.cloud_download_outlined, color: AppColors.info, size: 22),
+                SizedBox(width: 10),
+                Text('Ripristina da Backup', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              ],
+            ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -247,35 +342,53 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Annulla'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final payload = payloadCtrl.text.trim();
-                  final pwd = pwdCtrl.text.trim();
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Annulla'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () async {
+                        final payload = payloadCtrl.text.trim();
+                        final pwd = pwdCtrl.text.trim();
 
-                  if (payload.isEmpty || pwd.isEmpty) {
-                    setState(() => error = 'Compila tutti i campi');
-                    return;
-                  }
+                        if (payload.isEmpty || pwd.isEmpty) {
+                          setState(() => error = 'Compila tutti i campi');
+                          return;
+                        }
 
-                  try {
-                    final vault = context.read<VaultProvider>();
-                    final count = await vault.importBackup(payload, pwd);
-                    if (context.mounted) {
-                      Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Ripristinati $count elementi con successo')),
-                      );
-                    }
-                  } catch (e) {
-                    setState(() => error = 'Errore ripristino: password errata o dati non validi');
-                  }
-                },
-                child: const Text('Ripristina'),
+                        try {
+                          final vault = context.read<VaultProvider>();
+                          final count = await vault.importBackup(payload, pwd);
+                          if (context.mounted) {
+                            Navigator.of(ctx).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Ripristinati $count elementi con successo')),
+                            );
+                          }
+                        } catch (e) {
+                          setState(() => error = 'Errore ripristino: password errata o dati non validi');
+                        }
+                      },
+                      child: const Text('Ripristina'),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
@@ -289,25 +402,96 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: const Text('Distruggi Tutti i Dati?', style: TextStyle(color: AppColors.danger)),
-        content: const Text(
-          'Questa azione cancellerà permanentemente tutte le password, credenziali e impostazioni. Non potrà essere annullata.',
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: AppColors.danger.withValues(alpha: 0.35)),
         ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.danger.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+              ),
+              child: const Icon(Icons.delete_forever_rounded, color: AppColors.danger, size: 22),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Elimina tutti i dati?',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Questa operazione cancellerà permanentemente tutte le password, credenziali, note e impostazioni salvate.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                height: 1.45,
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'L\'azione è definitiva e non potrà essere annullata.',
+              style: TextStyle(
+                color: AppColors.dangerLight,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annulla'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              final vault = context.read<VaultProvider>();
-              final auth = context.read<AuthProvider>();
-              await vault.wipeAllData();
-              auth.lock();
-            },
-            child: const Text('Conferma Cancellazione Totale'),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Annulla'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.danger,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    final vault = context.read<VaultProvider>();
+                    final auth = context.read<AuthProvider>();
+                    await vault.wipeAllData();
+                    auth.lock();
+                  },
+                  child: const Text('Elimina tutto'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -320,11 +504,12 @@ class SettingsScreen extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final settings = settingsProvider.settings;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Impostazioni di Sicurezza'),
-      ),
-      body: SafeArea(
+    return SwipeBackWrapper(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Impostazioni di Sicurezza'),
+        ),
+        body: SafeArea(
         child: ListView(
           padding: EdgeInsets.fromLTRB(
             20,
@@ -345,9 +530,9 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 if (authProvider.isBiometricSupported) ...[
                   SwitchListTile(
-                    title: const Text('Sblocco Biometrico (Face ID / Impronta)',
+                    title: const Text('Sblocco Biometrico',
                         style: TextStyle(fontWeight: FontWeight.w500)),
-                    subtitle: const Text('Richiedi biometria per sbloccare il caveau',
+                    subtitle: const Text('Richiedi face ID o impronta digitale per sbloccare il caveau',
                         style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                     value: settings.biometricsEnabled,
                     activeThumbColor: AppColors.primary,
@@ -392,7 +577,7 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               children: [
                 SwitchListTile(
-                  title: const Text('Privacy Shield Multitasking',
+                  title: const Text('Privacy Shield',
                       style: TextStyle(fontWeight: FontWeight.w500)),
                   subtitle: const Text(
                     'Sfoca e nasconde l\'anteprima dell\'app nel selettore app',
@@ -405,7 +590,7 @@ class SettingsScreen extends StatelessWidget {
                 const Divider(color: AppColors.border),
                 ListTile(
                   leading: const Icon(Icons.content_cut_rounded, color: AppColors.primaryLight),
-                  title: const Text('Svuota Appunti Automaticamente',
+                  title: const Text('Svuota Appunti',
                       style: TextStyle(fontWeight: FontWeight.w500)),
                   subtitle: Text(
                     _formatClipboardLabel(settings.clipboardClearSeconds),
@@ -474,7 +659,8 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     ),
-  );
+  ),
+);
 }
 
   Widget _buildSectionHeader(String title) {

@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/vault_item.dart';
 import '../../providers/vault_provider.dart';
 import '../vault/vault_editor_screen.dart';
+import '../widgets/swipe_back_wrapper.dart';
 
 class SecurityAuditScreen extends StatelessWidget {
   const SecurityAuditScreen({super.key});
@@ -29,11 +30,12 @@ class SecurityAuditScreen extends StatelessWidget {
       scoreLabel = 'Attenzione: Sicurezza a Rischio';
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Security Audit'),
-      ),
-      body: SafeArea(
+    return SwipeBackWrapper(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Security Audit'),
+        ),
+        body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             20,
@@ -203,7 +205,8 @@ class SecurityAuditScreen extends StatelessWidget {
                   ],
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     ),

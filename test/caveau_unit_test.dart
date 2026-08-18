@@ -88,6 +88,14 @@ void main() {
   });
 
   group('SecuritySettings Tests', () {
+    test('default settings have autoLockSeconds set to 30 seconds', () {
+      const settings = SecuritySettings();
+      expect(settings.autoLockSeconds, equals(30));
+      expect(settings.biometricsEnabled, isTrue);
+      expect(settings.privacyScreenEnabled, isTrue);
+      expect(settings.clipboardClearSeconds, equals(30));
+    });
+
     test('serializes and deserializes security settings', () {
       const settings = SecuritySettings(
         biometricsEnabled: false,

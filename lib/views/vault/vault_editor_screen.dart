@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -139,7 +140,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
 
   void _openGenerator() {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      CupertinoPageRoute(
         builder: (_) => PasswordGeneratorScreen(
           onPasswordSelected: (pwd) {
             setState(() {
@@ -163,7 +164,17 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
           builder: (ctx, setDialogState) {
             return AlertDialog(
               backgroundColor: AppColors.surface,
-              title: const Text('Aggiungi Campo Personalizzato', style: TextStyle(fontSize: 18)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: AppColors.border),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryLight, size: 22),
+                  SizedBox(width: 10),
+                  Text('Campo Personalizzato', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                ],
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -184,32 +195,52 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                         activeColor: AppColors.primary,
                         onChanged: (v) => setDialogState(() => isSecret = v ?? false),
                       ),
-                      const Text('Nascondi valore (Dato segreto)'),
+                      const Expanded(
+                        child: Text('Nascondi valore (Dato segreto)', style: TextStyle(fontSize: 13)),
+                      ),
                     ],
                   ),
                 ],
               ),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Annulla'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (labelCtrl.text.trim().isNotEmpty && valueCtrl.text.trim().isNotEmpty) {
-                      setState(() {
-                        _customFields.add(
-                          CustomField(
-                            label: labelCtrl.text.trim(),
-                            value: valueCtrl.text.trim(),
-                            isSecret: isSecret,
-                          ),
-                        );
-                      });
-                      Navigator.of(ctx).pop();
-                    }
-                  },
-                  child: const Text('Aggiungi'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('Annulla'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: () {
+                          if (labelCtrl.text.trim().isNotEmpty && valueCtrl.text.trim().isNotEmpty) {
+                            setState(() {
+                              _customFields.add(
+                                CustomField(
+                                  label: labelCtrl.text.trim(),
+                                  value: valueCtrl.text.trim(),
+                                  isSecret: isSecret,
+                                ),
+                              );
+                            });
+                            Navigator.of(ctx).pop();
+                          }
+                        },
+                        child: const Text('Aggiungi'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             );

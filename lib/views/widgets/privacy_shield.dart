@@ -22,34 +22,39 @@ class PrivacyShield extends StatelessWidget {
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-              child: Container(
-                color: AppColors.background.withValues(alpha: 0.85),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const VaultLogo(
-                        size: 76,
-                        showGlow: true,
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Caveau Protetto',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Container(
+                  color: AppColors.background.withValues(alpha: 0.85),
+                  child: const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        VaultLogo(
+                          size: 76,
+                          showGlow: false,
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Schermata oscurata per la tua privacy',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
+                        SizedBox(height: 20),
+                        Text(
+                          'Caveau Protetto',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.none,
+                          ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 6),
+                        Text(
+                          'Schermata oscurata per la tua privacy',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

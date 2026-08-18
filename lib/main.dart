@@ -102,7 +102,9 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
     final settingsProvider = context.read<SettingsProvider>();
     final settings = settingsProvider.settings;
 
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
       _pausedAt = DateTime.now();
       setState(() {
         _isBackgrounded = true;

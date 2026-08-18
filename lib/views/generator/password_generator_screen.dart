@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/clipboard_service.dart';
 import '../../core/utils/password_generator.dart';
 import '../widgets/password_strength_bar.dart';
+import '../widgets/swipe_back_wrapper.dart';
 
 class PasswordGeneratorScreen extends StatefulWidget {
   final ValueChanged<String>? onPasswordSelected;
@@ -75,11 +76,12 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Generatore Password'),
-      ),
-      body: SafeArea(
+    return SwipeBackWrapper(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Generatore Password'),
+        ),
+        body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             20,
@@ -276,7 +278,8 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                 icon: const Icon(Icons.copy_rounded),
                 label: const Text('Copia Password Negli Appunti'),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     ),

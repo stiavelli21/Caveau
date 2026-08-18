@@ -10,7 +10,7 @@ class SecuritySettings {
 
   const SecuritySettings({
     this.biometricsEnabled = true,
-    this.autoLockSeconds = 0,
+    this.autoLockSeconds = 30,
     this.privacyScreenEnabled = true,
     this.clipboardClearSeconds = 30,
     this.failedAttempts = 0,
@@ -46,7 +46,7 @@ class SecuritySettings {
 
   factory SecuritySettings.fromJson(Map<String, dynamic> json) => SecuritySettings(
     biometricsEnabled: json['biometricsEnabled'] as bool? ?? true,
-    autoLockSeconds: json['autoLockSeconds'] as int? ?? 0,
+    autoLockSeconds: json['autoLockSeconds'] as int? ?? 30,
     privacyScreenEnabled: json['privacyScreenEnabled'] as bool? ?? true,
     clipboardClearSeconds: json['clipboardClearSeconds'] as int? ?? 30,
     failedAttempts: json['failedAttempts'] as int? ?? 0,

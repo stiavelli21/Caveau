@@ -12,37 +12,59 @@ class LockScreen extends StatefulWidget {
   State<LockScreen> createState() => _LockScreenState();
 }
 
-class _LockScreenState extends State<LockScreen> {
+class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
   final TextEditingController _pinController = TextEditingController();
   bool _obscurePin = true;
-  bool _hasAttemptedAutoBiometrics = false;
+  bool _isAuthenticating = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _triggerBiometricsIfAllowed();
     });
   }
 
-  void _triggerBiometricsIfAllowed() async {
-    if (_hasAttemptedAutoBiometrics) return;
-    _hasAttemptedAutoBiometrics = true;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _triggerBiometricsIfAllowed();
+    }
+  }
+
+  Future<void> _triggerBiometricsIfAllowed({bool isManual = false}) async {
+    if (_isAuthenticating || !mounted) return;
+
+    // Do not trigger biometrics automatically when the app is inactive, paused, or backgrounded
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (!isManual && lifecycle != null && lifecycle != AppLifecycleState.resumed) {
+      return;
+    }
 
     final authProvider = context.read<AuthProvider>();
     final settingsProvider = context.read<SettingsProvider>();
 
     if (authProvider.isBiometricSupported &&
         settingsProvider.settings.biometricsEnabled &&
-        !authProvider.isLockedOut) {
-      await authProvider.authenticateWithBiometrics();
+        !authProvider.isLockedOut &&
+        authProvider.status == AuthStatus.locked) {
+      _isAuthenticating = true;
+      try {
+        await authProvider.authenticateWithBiometrics(silentFail: !isManual);
+      } finally {
+        if (mounted) {
+          _isAuthenticating = false;
+        }
+      }
     }
-  }
-
-  @override
-  void dispose() {
-    _pinController.dispose();
-    super.dispose();
   }
 
   void _submitPin() async {
@@ -60,6 +82,9 @@ class _LockScreenState extends State<LockScreen> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final settingsProvider = context.watch<SettingsProvider>();
+    final canUseBiometrics = authProvider.isBiometricSupported &&
+        settingsProvider.settings.biometricsEnabled &&
+        !authProvider.isLockedOut;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -79,11 +104,11 @@ class _LockScreenState extends State<LockScreen> {
                 // Glowing Vault Safe Icon
                 const Center(
                   child: VaultLogo(
-                    size: 96,
+                    size: 88,
                     showGlow: true,
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
                 const Text(
                   'Caveau Protetto',
                   textAlign: TextAlign.center,
@@ -96,51 +121,15 @@ class _LockScreenState extends State<LockScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Sblocca per accedere alle tue credenziali',
+                  'Inserisci il PIN Master per accedere',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 36),
-                // Biometrics Quick Button
-                if (authProvider.isBiometricSupported &&
-                    settingsProvider.settings.biometricsEnabled &&
-                    !authProvider.isLockedOut) ...[
-                  OutlinedButton.icon(
-                    onPressed: () => authProvider.authenticateWithBiometrics(),
-                    icon: const Icon(Icons.fingerprint_rounded, size: 28, color: AppColors.primaryLight),
-                    label: const Text(
-                      'Sblocca con Biometria / Face ID',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: AppColors.primary, width: 1.5),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Row(
-                    children: [
-                      Expanded(child: Divider(color: AppColors.border)),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'OPPURE USA IL PIN MASTER',
-                          style: TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: AppColors.border)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                ],
+                const SizedBox(height: 32),
+
                 // PIN Input Field
                 TextField(
                   controller: _pinController,
@@ -156,7 +145,7 @@ class _LockScreenState extends State<LockScreen> {
                   ),
                   decoration: InputDecoration(
                     hintText: 'Inserisci PIN Master',
-                    prefixIcon: const Icon(Icons.pin_rounded),
+                    prefixIcon: const Icon(Icons.password_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePin
@@ -168,6 +157,8 @@ class _LockScreenState extends State<LockScreen> {
                     ),
                   ),
                 ),
+
+                // Error message
                 if (authProvider.errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Container(
@@ -197,11 +188,42 @@ class _LockScreenState extends State<LockScreen> {
                     ),
                   ),
                 ],
+
                 const SizedBox(height: 20),
+
+                // Primary Unlock Button (PIN)
                 ElevatedButton(
                   onPressed: authProvider.isLockedOut ? null : _submitPin,
                   child: const Text('Sblocca Cassaforte'),
                 ),
+
+                // Retry Biometrics Action Button (if supported and enabled)
+                if (canUseBiometrics) ...[
+                  const SizedBox(height: 14),
+                  OutlinedButton.icon(
+                    onPressed: () => _triggerBiometricsIfAllowed(isManual: true),
+                    icon: const Icon(
+                      Icons.fingerprint_rounded,
+                      size: 22,
+                      color: AppColors.primaryLight,
+                    ),
+                    label: const Text(
+                      'Sblocca con Biometria / Face ID',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryLight,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: AppColors.border),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -210,3 +232,4 @@ class _LockScreenState extends State<LockScreen> {
     );
   }
 }
+
