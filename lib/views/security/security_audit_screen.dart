@@ -7,6 +7,12 @@ import '../../providers/vault_provider.dart';
 import '../vault/vault_editor_screen.dart';
 import '../widgets/swipe_back_wrapper.dart';
 
+/// Security health dashboard analyzing stored credentials for vulnerabilities.
+/// 
+/// Highlights:
+/// - Overall security score calculated from entropy metrics and password reuse penalties
+/// - Count of total items, weak passwords, and duplicated credentials
+/// - Direct remediation action buttons allowing immediate password updates via [VaultEditorScreen]
 class SecurityAuditScreen extends StatelessWidget {
   const SecurityAuditScreen({super.key});
 
@@ -19,6 +25,7 @@ class SecurityAuditScreen extends StatelessWidget {
     final reusedMap = vaultProvider.reusedPasswordsMap;
     final totalItems = vaultProvider.items.length;
 
+    // Determine visual status color and description based on audit score
     Color scoreColor;
     String scoreLabel = l10n.securityScoreLabel(score);
     if (score >= 85) {
@@ -45,7 +52,7 @@ class SecurityAuditScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Score Banner
+                // Score Radial Gauge Banner
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -101,7 +108,7 @@ class SecurityAuditScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Statistics Row
+                // Statistics Summary Row
                 Row(
                   children: [
                     Expanded(
@@ -134,7 +141,7 @@ class SecurityAuditScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
 
-                // Weak passwords list
+                // Weak and Short Passwords Section
                 if (weakItems.isNotEmpty) ...[
                   Text(
                     l10n.weakPasswordsSection,
@@ -154,7 +161,7 @@ class SecurityAuditScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                 ],
 
-                // Reused passwords list
+                // Reused / Duplicated Passwords Section
                 if (reusedMap.isNotEmpty) ...[
                   Text(
                     l10n.reusedPasswordsSection,
@@ -177,6 +184,7 @@ class SecurityAuditScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                 ],
 
+                // All Passwords Healthy State
                 if (weakItems.isEmpty && reusedMap.isEmpty)
                   Container(
                     padding: const EdgeInsets.all(24),
@@ -219,6 +227,7 @@ class SecurityAuditScreen extends StatelessWidget {
     );
   }
 
+  /// Helper rendering an individual statistic KPI card.
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -258,6 +267,7 @@ class SecurityAuditScreen extends StatelessWidget {
     );
   }
 
+  /// Helper rendering an individual vulnerability tile with a direct "Fix" shortcut.
   Widget _buildItemAuditTile(
     BuildContext context,
     VaultItem item,

@@ -2,13 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app_colors.dart';
 
+/// Central theme configuration for Caveau.
+/// Configures a unified, high-security Material 3 dark theme with custom styling
+/// for cards, dialogs, inputs, buttons, chips, and system overlays.
 class AppTheme {
+  // Private constructor to prevent instantiation.
+  AppTheme._();
+
+  /// Returns the global [ThemeData] configured with cyber-dark aesthetics.
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.background,
       primaryColor: AppColors.primary,
+      
+      // Material 3 Color Scheme definition
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
         onPrimary: Colors.white,
@@ -19,6 +28,8 @@ class AppTheme {
         error: AppColors.danger,
         onError: Colors.white,
       ),
+
+      // App Bar Theme (translucent background, bold title, light status bar)
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
@@ -33,6 +44,8 @@ class AppTheme {
         ),
         iconTheme: IconThemeData(color: AppColors.textPrimary),
       ),
+
+      // Card Theme (subtle borders, rounded corners, no default shadow)
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
@@ -42,6 +55,8 @@ class AppTheme {
         ),
         margin: EdgeInsets.zero,
       ),
+
+      // Input Decoration Theme (filled dark background with custom focus/error borders)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceElevated,
@@ -71,6 +86,8 @@ class AppTheme {
         prefixIconColor: AppColors.textSecondary,
         suffixIconColor: AppColors.textSecondary,
       ),
+
+      // Elevated Button Theme (primary indigo background with bold typography)
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -87,6 +104,8 @@ class AppTheme {
           ),
         ),
       ),
+
+      // Outlined Button Theme (subtle border, light text)
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
@@ -101,6 +120,8 @@ class AppTheme {
           ),
         ),
       ),
+
+      // Text Button Theme (subtle indigo accent)
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primaryLight,
@@ -110,6 +131,8 @@ class AppTheme {
           ),
         ),
       ),
+
+      // Chip Theme (filter pills in VaultHomeScreen)
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceElevated,
         selectedColor: AppColors.primary.withValues(alpha: 0.25),
@@ -122,11 +145,15 @@ class AppTheme {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       ),
+
+      // Divider Theme
       dividerTheme: const DividerThemeData(
         color: AppColors.border,
         thickness: 1,
         space: 1,
       ),
+
+      // Floating Action Button Theme
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,

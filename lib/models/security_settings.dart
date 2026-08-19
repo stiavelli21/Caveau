@@ -1,14 +1,31 @@
 import 'dart:convert';
 
+/// Immutable model representing user security preferences and session configuration.
 class SecuritySettings {
+  /// Whether biometric unlock (Face ID, Touch ID, fingerprint) is enabled.
   final bool biometricsEnabled;
-  final int autoLockSeconds; // 0 = immediato, 30, 60, 300
-  final bool privacyScreenEnabled;
-  final int clipboardClearSeconds; // 0 = mai, 15, 30, 60
-  final int failedAttempts;
-  final DateTime? lockoutUntil;
-  final String languageCode; // 'it', 'en'
 
+  /// Duration of background inactivity before the app locks itself (in seconds).
+  /// Values: 0 = immediate, 30, 60, 300.
+  final int autoLockSeconds;
+
+  /// Whether the privacy shield blur overlay is activated when the app enters background/multitasking.
+  final bool privacyScreenEnabled;
+
+  /// Duration after which copied sensitive data is automatically cleared from the clipboard (in seconds).
+  /// Values: 0 = never / disabled, 15, 30, 60.
+  final int clipboardClearSeconds;
+
+  /// Counter of consecutive failed Master PIN authentication attempts.
+  final int failedAttempts;
+
+  /// Timestamp until which Master PIN unlock is temporarily blocked (anti-brute-force lockout).
+  final DateTime? lockoutUntil;
+
+  /// ISO 639-1 language code selected for the UI ('it', 'en', 'es', 'fr', 'de').
+  final String languageCode;
+
+  /// Creates a [SecuritySettings] instance with sensible defaults.
   const SecuritySettings({
     this.biometricsEnabled = true,
     this.autoLockSeconds = 30,
@@ -19,6 +36,7 @@ class SecuritySettings {
     this.languageCode = 'it',
   });
 
+  /// Creates a copy of this [SecuritySettings] instance with optional modified properties.
   SecuritySettings copyWith({
     bool? biometricsEnabled,
     int? autoLockSeconds,
@@ -39,6 +57,7 @@ class SecuritySettings {
     );
   }
 
+  /// Converts this configuration to a JSON-compatible map for persistence.
   Map<String, dynamic> toJson() => {
     'biometricsEnabled': biometricsEnabled,
     'autoLockSeconds': autoLockSeconds,
@@ -49,6 +68,7 @@ class SecuritySettings {
     'languageCode': languageCode,
   };
 
+  /// Constructs a [SecuritySettings] instance from a JSON map with safe fallbacks.
   factory SecuritySettings.fromJson(Map<String, dynamic> json) => SecuritySettings(
     biometricsEnabled: json['biometricsEnabled'] as bool? ?? true,
     autoLockSeconds: json['autoLockSeconds'] as int? ?? 30,
@@ -61,8 +81,10 @@ class SecuritySettings {
     languageCode: json['languageCode'] as String? ?? 'it',
   );
 
+  /// Serializes the settings object into a JSON string for secure storage.
   String serialize() => jsonEncode(toJson());
 
+  /// Deserializes a JSON string into a [SecuritySettings] instance.
   factory SecuritySettings.deserialize(String jsonString) =>
       SecuritySettings.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
 }

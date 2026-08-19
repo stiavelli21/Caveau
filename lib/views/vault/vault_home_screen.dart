@@ -15,6 +15,15 @@ import '../widgets/vault_logo.dart';
 import 'vault_detail_screen.dart';
 import 'vault_editor_screen.dart';
 
+/// Primary dashboard screen displayed once authentication is successful.
+/// 
+/// Provides:
+/// - Top App Bar with audit health badge, password generator shortcut, settings, and instant vault lock
+/// - Live search bar filtering across title, username, website, and tags
+/// - Category and Favorites filter chips
+/// - Decrypted items list rendered with [VaultCard]
+/// - Empty state and no-search-results placeholders
+/// - Floating Action Button opening category picker modal for creating new entries
 class VaultHomeScreen extends StatefulWidget {
   const VaultHomeScreen({super.key});
 
@@ -28,6 +37,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Load decrypted items and persistent settings into memory upon screen initial load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<VaultProvider>().loadItems();
       context.read<SettingsProvider>().loadSettings();
@@ -40,6 +50,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
     super.dispose();
   }
 
+  /// Displays modal bottom sheet allowing the user to select which category of item to create.
   void _showAddCategoryPicker(BuildContext context) {
     final l10n = context.l10n;
     showModalBottomSheet(
@@ -137,6 +148,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
     );
   }
 
+  /// Helper rendering an individual category option tile in the creation picker.
   Widget _buildCategoryAddTile(
     BuildContext context,
     String title,
@@ -185,7 +197,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           ],
         ),
         actions: [
-          // Security Audit Icon with badge
+          // Security Audit Icon with vulnerability warning badge
           IconButton(
             tooltip: l10n.securityAuditTooltip,
             icon: Stack(
@@ -216,7 +228,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
               );
             },
           ),
-          // Password Generator Tool
+          // Dedicated Password Generator Tool Shortcut
           IconButton(
             tooltip: l10n.passwordGeneratorTooltip,
             icon: const Icon(Icons.auto_fix_high_rounded),
@@ -228,7 +240,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
               );
             },
           ),
-          // Settings
+          // App & Security Settings Screen
           IconButton(
             tooltip: l10n.settingsTooltip,
             icon: const Icon(Icons.settings_outlined),
@@ -240,7 +252,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
               );
             },
           ),
-          // Lock Vault Button
+          // Instant Lock Vault Action
           IconButton(
             tooltip: l10n.lockNowTooltip,
             icon: const Icon(Icons.lock_outline_rounded, color: AppColors.dangerLight),
@@ -253,7 +265,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Search Bar
+            // Interactive Search Bar
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: TextField(
@@ -276,7 +288,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
               ),
             ),
 
-            // Horizontal Filter Chips
+            // Horizontal Filter Chips (All, Favorites, Category Filters)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -336,7 +348,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
 
             const SizedBox(height: 8),
 
-            // Items List
+            // Decrypted Items List & Fallback Empty States
             Expanded(
               child: vaultProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -413,7 +425,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                             return VaultCard(
                               item: item,
                               clipboardClearSeconds:
-                                  settingsProvider.settings.clipboardClearSeconds,
+                                   settingsProvider.settings.clipboardClearSeconds,
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(

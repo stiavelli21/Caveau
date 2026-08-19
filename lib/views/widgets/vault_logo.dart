@@ -4,11 +4,19 @@ import '../../core/constants/app_colors.dart';
 /// Reusable Vault / Safe logo widget for Caveau.
 /// Renders the official high-tech vault icon with optional glow and styling.
 class VaultLogo extends StatelessWidget {
+  /// Diameter or width/height dimension in logical pixels.
   final double size;
+
+  /// Whether to render a neon cyber glow shadow behind the logo.
   final bool showGlow;
+
+  /// Whether the logo should be clipped in a circular frame instead of rounded rectangle.
   final bool isCircular;
+
+  /// Custom border radius override when [isCircular] is false.
   final BorderRadius? borderRadius;
 
+  /// Creates a [VaultLogo] widget.
   const VaultLogo({
     super.key,
     this.size = 48,

@@ -10,9 +10,22 @@ import '../../providers/settings_provider.dart';
 import '../../providers/vault_provider.dart';
 import '../widgets/swipe_back_wrapper.dart';
 
+/// Settings and security management screen.
+/// 
+/// Allows users to:
+/// - Configure biometric authentication (Face ID / Fingerprint)
+/// - Change the Master PIN
+/// - Set background auto-lock timeout (0s, 30s, 60s, 300s)
+/// - Toggle privacy shield multitasking blur
+/// - Set clipboard auto-clear duration
+/// - Export & import password-protected encrypted backups
+/// - Change application language (IT, EN, ES, FR, DE)
+/// - Access Legal, Privacy Policy, Open Source repo, and Security Guide
+/// - Perform a full database wipe ("Danger Zone")
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  /// Displays modal bottom sheet for changing the app language.
   void _showLanguagePicker(BuildContext context, SettingsProvider provider) {
     final l10n = context.l10n;
     showModalBottomSheet(
@@ -77,6 +90,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Displays dialog to securely update the Master PIN.
   void _showChangePinDialog(BuildContext context) {
     final l10n = context.l10n;
     final currentPinCtrl = TextEditingController();
@@ -192,6 +206,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Displays dialog prompting for password to generate an encrypted export payload.
   void _showExportDialog(BuildContext context) {
     final l10n = context.l10n;
     final pwdCtrl = TextEditingController();
@@ -313,6 +328,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Displays the exported encrypted backup string in a copyable text container.
   void _showBackupPayloadDialog(BuildContext context, String payload) {
     final l10n = context.l10n;
     showDialog(
@@ -395,6 +411,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Displays dialog to restore vault items from a pasted backup JSON string.
   void _showImportDialog(BuildContext context) {
     final l10n = context.l10n;
     final payloadCtrl = TextEditingController();
@@ -499,6 +516,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Displays critical confirmation dialog before completely wiping all application data.
   void _showWipeDialog(BuildContext context) {
     final l10n = context.l10n;
     showDialog(
@@ -627,7 +645,7 @@ class SettingsScreen extends StatelessWidget {
               MediaQuery.of(context).padding.bottom + 36,
             ),
             children: [
-              // Security Section
+              // Authentication & Access Section
               _buildSectionHeader(l10n.sectionAuthAccess),
               Container(
                 decoration: BoxDecoration(
@@ -675,7 +693,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Privacy Section
+              // Privacy & Clipboard Section
               _buildSectionHeader(l10n.sectionPrivacyClipboard),
               Container(
                 decoration: BoxDecoration(
@@ -713,7 +731,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Backup Section
+              // Encrypted Backup & Restore Section
               _buildSectionHeader(l10n.sectionBackupRestore),
               Container(
                 decoration: BoxDecoration(
@@ -779,7 +797,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Legal, Privacy & Open Source
+              // Legal, Privacy & Open Source Section
               _buildSectionHeader(l10n.sectionLegalAndAbout),
               Container(
                 decoration: BoxDecoration(
@@ -817,7 +835,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Danger Zone
+              // Destructive Danger Zone
               _buildSectionHeader(l10n.sectionDangerZone),
               Container(
                 decoration: BoxDecoration(
@@ -842,6 +860,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Helper rendering uppercase styled section header labels.
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
@@ -857,6 +876,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Displays bottom sheet allowing selection of auto-lock duration.
   void _showAutoLockPicker(BuildContext context, SettingsProvider provider) {
     final l10n = context.l10n;
     showModalBottomSheet(
@@ -907,6 +927,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Displays bottom sheet allowing selection of clipboard clear timer duration.
   void _showClipboardPicker(BuildContext context, SettingsProvider provider) {
     final l10n = context.l10n;
     showModalBottomSheet(
@@ -957,6 +978,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Helper rendering an individual selectable option tile in a picker sheet.
   Widget _buildOptionTile(
     BuildContext context,
     String title,
@@ -972,6 +994,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Opens an external URL safely in the device browser.
   Future<void> _openExternalUrl(String urlString) async {
     final uri = Uri.parse(urlString);
     try {
@@ -979,6 +1002,7 @@ class SettingsScreen extends StatelessWidget {
     } catch (_) {}
   }
 
+  /// Displays the informative Security and Backup Guide dialog.
   void _showSecurityGuideDialog(BuildContext context) {
     final l10n = context.l10n;
     showDialog(

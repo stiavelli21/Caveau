@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
+/// Categories supported for vault items in Caveau.
 enum VaultCategory {
   login,
   card,
@@ -8,43 +9,56 @@ enum VaultCategory {
   identity,
   apiKey;
 
+  /// Default fallback English display name for this category.
+  /// For localized UI rendering, use [AppLocalizations.categoryDisplayName].
   String get displayName {
     switch (this) {
       case VaultCategory.login:
         return 'Password & Account';
       case VaultCategory.card:
-        return 'Carta di Pagamento';
+        return 'Payment Card';
       case VaultCategory.note:
-        return 'Nota Sicura';
+        return 'Secure Note';
       case VaultCategory.identity:
-        return 'Dati Identità';
+        return 'Identity & Document';
       case VaultCategory.apiKey:
-        return 'Chiave API / Token';
+        return 'API Key / Token';
     }
   }
 
+  /// Default fallback English short label for filter chips.
+  /// For localized UI rendering, use [AppLocalizations.categoryShortName].
   String get shortName {
     switch (this) {
       case VaultCategory.login:
         return 'Login';
       case VaultCategory.card:
-        return 'Carte';
+        return 'Cards';
       case VaultCategory.note:
-        return 'Note';
+        return 'Notes';
       case VaultCategory.identity:
-        return 'Identità';
+        return 'Identity';
       case VaultCategory.apiKey:
         return 'API';
     }
   }
 }
 
+/// Dynamic user-defined custom key-value field attached to a [VaultItem].
 class CustomField {
+  /// Unique identifier (UUID v4) for the custom field.
   final String id;
+
+  /// Human-readable label (e.g. "PIN", "Recovery Code", "Security Question").
   final String label;
+
+  /// Text content/value stored in this field.
   final String value;
+
+  /// When true, the value is masked in the UI by default and subject to auto-clearing.
   final bool isSecret;
 
+  /// Creates a [CustomField] with an optional generated UUID.
   CustomField({
     String? id,
     required this.label,
@@ -52,6 +66,7 @@ class CustomField {
     this.isSecret = false,
   }) : id = id ?? const Uuid().v4();
 
+  /// Converts this field to a JSON-compatible map.
   Map<String, dynamic> toJson() => {
     'id': id,
     'label': label,
@@ -59,6 +74,7 @@ class CustomField {
     'isSecret': isSecret,
   };
 
+  /// Constructs a [CustomField] instance from a JSON map with safe fallbacks.
   factory CustomField.fromJson(Map<String, dynamic> json) => CustomField(
     id: json['id'] as String?,
     label: json['label'] as String? ?? '',
@@ -67,38 +83,74 @@ class CustomField {
   );
 }
 
+/// Core domain model representing a single encrypted secret or credential stored in Caveau.
 class VaultItem {
+  /// Unique identifier (UUID v4) for this vault record.
   final String id;
+
+  /// Title or service name (e.g. "Google", "GitHub", "Main Visa").
   final String title;
+
+  /// Classification category defining the primary purpose of this record.
   final VaultCategory category;
+
+  /// Whether the user pinned this item as a favorite.
   final bool isFavorite;
+
+  /// Record creation timestamp.
   final DateTime createdAt;
+
+  /// Record last modification timestamp.
   final DateTime updatedAt;
   
-  // Login fields
+  // --- Category-specific fields: Login ---
+  /// Account username or email.
   final String? username;
+
+  /// Account password.
   final String? password;
+
+  /// Service website or login URL.
   final String? websiteUrl;
   
-  // Card fields
+  // --- Category-specific fields: Payment Card ---
+  /// Name printed on the card.
   final String? cardHolder;
+
+  /// 16-digit or custom payment card number.
   final String? cardNumber;
+
+  /// Card expiration date (e.g. "12/28").
   final String? cardExpiry;
+
+  /// Security code (CVV / CVC / CID).
   final String? cardCvv;
+
+  /// Card ATM PIN.
   final String? cardPin;
   
-  // Identity & Note fields
+  // --- Category-specific fields: Identity & Secure Note ---
+  /// Encrypted multi-line text or markdown notes.
   final String? notes;
+
+  /// Contact email address.
   final String? email;
+
+  /// Contact telephone number.
   final String? phone;
+
+  /// Government ID, passport number, or tax code.
   final String? idNumber;
   
-  // API Key fields
+  // --- Category-specific fields: API Key ---
+  /// Private API token, bearer token, or secret key.
   final String? apiKeySecret;
   
-  // Custom fields
+  // --- Dynamic custom fields ---
+  /// List of additional user-defined key-value fields.
   final List<CustomField> customFields;
 
+  /// Creates a new [VaultItem] with automatic UUID and timestamps if omitted.
   VaultItem({
     String? id,
     required this.title,
@@ -124,6 +176,7 @@ class VaultItem {
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
+  /// Creates a copy of this [VaultItem] with updated properties and a refreshed [updatedAt] timestamp.
   VaultItem copyWith({
     String? id,
     String? title,
@@ -170,6 +223,7 @@ class VaultItem {
     );
   }
 
+  /// Converts this [VaultItem] to a JSON-compatible map for storage and export.
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
@@ -193,10 +247,11 @@ class VaultItem {
     'customFields': customFields.map((f) => f.toJson()).toList(),
   };
 
+  /// Constructs a [VaultItem] instance from a JSON map with backward-compatible fallbacks.
   factory VaultItem.fromJson(Map<String, dynamic> json) {
     return VaultItem(
       id: json['id'] as String,
-      title: json['title'] as String? ?? 'Senza Titolo',
+      title: json['title'] as String? ?? 'Untitled',
       category: VaultCategory.values.firstWhere(
         (e) => e.name == json['category'],
         orElse: () => VaultCategory.login,
@@ -228,8 +283,10 @@ class VaultItem {
     );
   }
 
+  /// Serializes this [VaultItem] into a JSON string.
   String serialize() => jsonEncode(toJson());
 
+  /// Deserializes a JSON string into a [VaultItem] instance.
   factory VaultItem.deserialize(String jsonString) =>
       VaultItem.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
 }

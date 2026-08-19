@@ -7,9 +7,20 @@ import '../../core/utils/password_generator.dart';
 import '../widgets/password_strength_bar.dart';
 import '../widgets/swipe_back_wrapper.dart';
 
+/// Dedicated utility screen for generating and evaluating cryptographically strong passwords.
+/// 
+/// Supports:
+/// - Adjustable length slider (8 to 48 characters)
+/// - Toggleable character sets (uppercase, lowercase, numbers, symbols)
+/// - Ambiguous character exclusion (Il1O0)
+/// - Real-time password strength meter and entropy calculation
+/// - Direct clipboard copy with auto-clear
+/// - Optional [onPasswordSelected] callback when invoked as a picker from the Vault editor
 class PasswordGeneratorScreen extends StatefulWidget {
+  /// Optional callback invoked when the user selects the generated password for a form.
   final ValueChanged<String>? onPasswordSelected;
 
+  /// Creates a [PasswordGeneratorScreen] instance.
   const PasswordGeneratorScreen({
     super.key,
     this.onPasswordSelected,
@@ -35,6 +46,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
     _regenerate();
   }
 
+  /// Regenerates the password string using current settings.
   void _regenerate() {
     final pwd = PasswordGenerator.generate(
       length: _length,
@@ -49,6 +61,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
     });
   }
 
+  /// Copies the generated password to the clipboard with a 30-second auto-clear timer.
   void _copy() {
     final l10n = context.l10n;
     ClipboardService.copyWithAutoClear(_generatedPassword, autoClearSeconds: 30);
@@ -96,7 +109,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Password Display Card
+                // Password Display Card with Live Strength Bar
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -147,7 +160,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   ),
                 ),
                 const SizedBox(height: 28),
-                // Length Slider Card
+                // Password Length Slider Card
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
@@ -210,7 +223,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Character Sets Toggles
+                // Character Sets Toggle Tiers
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.surface,
@@ -268,6 +281,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                // Action Button (Use Password or Copy)
                 if (widget.onPasswordSelected != null)
                   ElevatedButton.icon(
                     onPressed: () {
@@ -291,6 +305,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
     );
   }
 
+  /// Helper rendering an individual character-set switch tile.
   Widget _buildToggleTile({
     required String title,
     String? subtitle,

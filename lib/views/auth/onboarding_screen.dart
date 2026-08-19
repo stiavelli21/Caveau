@@ -9,6 +9,15 @@ import '../../providers/settings_provider.dart';
 import '../widgets/language_selector_button.dart';
 import '../widgets/vault_logo.dart';
 
+/// First-launch onboarding screen for Caveau.
+/// 
+/// Guides the user through:
+/// - Language selection
+/// - Architectural security briefing (100% offline, zero-knowledge, no password recovery)
+/// - Legal & transparency disclaimers (GitHub open source & Privacy Policy)
+/// - Mandatory user awareness confirmation checkbox
+/// - Initial Master PIN creation with matching validation (min 4 characters)
+/// - Biometric unlock enablement toggle
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -31,15 +40,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  /// Opens an external URL (e.g. GitHub repository, Privacy Policy) in the device browser.
   Future<void> _openExternalUrl(String urlString) async {
     final uri = Uri.parse(urlString);
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
-      // Ignora silenziosamente errori di apertura URL
+      // Silently ignore browser launch errors
     }
   }
 
+  /// Validates input criteria and initializes the Master PIN and security settings.
   void _submit() async {
     final l10n = context.l10n;
     final pin = _pinController.text.trim();
@@ -135,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const SizedBox(height: 24),
 
                     // ============================================================
-                    // WIDGET INFORMATIVO: ARCHITETTURA, BACKUP, GITHUB E PRIVACY
+                    // INFORMATION BRIEFING CARD: ARCHITECTURE, BACKUP, GITHUB & PRIVACY
                     // ============================================================
                     Container(
                       padding: const EdgeInsets.all(18),
@@ -178,7 +189,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // 2. Backup & Nessun Recupero Password
+                          // 2. Backup & No Remote Password Recovery
                           _buildInfoItem(
                             icon: Icons.cloud_off_rounded,
                             iconColor: AppColors.warning,
@@ -187,7 +198,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // 3. 100% Gratuita e Senza Costi
+                          // 3. 100% Free & No Hidden Costs
                           _buildInfoItem(
                             icon: Icons.card_giftcard_rounded,
                             iconColor: AppColors.primaryLight,
@@ -196,7 +207,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // 4. Open Source su GitHub
+                          // 4. Open Source on GitHub
                           _buildInfoItem(
                             icon: Icons.code_rounded,
                             iconColor: AppColors.info,
@@ -223,7 +234,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // 4. Privacy Policy & Termini
+                          // 5. Privacy Policy & Terms
                           _buildInfoItem(
                             icon: Icons.policy_outlined,
                             iconColor: AppColors.info,
@@ -255,7 +266,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const SizedBox(height: 24),
 
                     // ============================================================
-                    // CHECKBOX DI CONSAPEVOLEZZA E PRESA VISIONE
+                    // USER AWARENESS & ACKNOWLEDGEMENT CHECKBOX
                     // ============================================================
                     InkWell(
                       onTap: () => setState(() => _disclaimerAccepted = !_disclaimerAccepted),
@@ -305,7 +316,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const SizedBox(height: 28),
 
                     // ============================================================
-                    // CREAZIONE MASTER PIN
+                    // MASTER PIN CREATION FORM
                     // ============================================================
                     Text(
                       l10n.createMasterPinTitle,
@@ -367,7 +378,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ],
                     const SizedBox(height: 24),
 
-                    // Biometrics Switch (se supportato)
+                    // Biometrics toggle switch (if device supports biometric sensors)
                     if (authProvider.isBiometricSupported)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -404,7 +415,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     const SizedBox(height: 32),
 
-                    // Inizializza Vault
+                    // Initialize Vault action button
                     ElevatedButton(
                       onPressed: _submit,
                       child: Text(l10n.initializeVaultButton),
@@ -419,6 +430,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  /// Helper widget rendering a single informative tile with icon, title, description, and optional action.
   Widget _buildInfoItem({
     required IconData icon,
     required Color iconColor,

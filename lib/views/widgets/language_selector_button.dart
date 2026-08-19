@@ -5,14 +5,21 @@ import '../../core/constants/app_colors.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../providers/settings_provider.dart';
 
+/// Interactive button displaying the active language flag and code.
+/// 
+/// When tapped, opens a bottom sheet enabling the user to switch between
+/// supported languages (Italian, English, Spanish, French, German) with real-time UI updates.
 class LanguageSelectorButton extends StatelessWidget {
+  /// Whether to render in a more compact layout.
   final bool isCompact;
 
+  /// Creates a [LanguageSelectorButton] widget.
   const LanguageSelectorButton({
     super.key,
     this.isCompact = false,
   });
 
+  /// Displays the modal bottom sheet containing the list of supported languages.
   void _showLanguagePicker(BuildContext context) {
     HapticFeedback.selectionClick();
     final settingsProvider = context.read<SettingsProvider>();
@@ -38,6 +45,7 @@ class LanguageSelectorButton extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Bottom sheet header title
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
@@ -46,6 +54,7 @@ class LanguageSelectorButton extends StatelessWidget {
                   ),
                 ),
                 const Divider(color: AppColors.border),
+                // Language selection tiles
                 ...AppLocalizations.supportedLanguages.map((lang) {
                   final isSelected = current == lang.code;
                   return ListTile(

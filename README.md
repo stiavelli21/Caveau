@@ -1,85 +1,90 @@
 # Caveau
 
-**Caveau** è un password manager e digital vault mobile, sviluppato in **Flutter**, progettato secondo il paradigma **Zero-Knowledge** e **100% Offline**. Cifra e protegge localmente credenziali di accesso, carte di pagamento, note segrete, documenti d'identità e token API senza mai trasmettere alcun dato in rete.
+**Caveau** is an open-source mobile password manager and digital vault built with **Flutter**, designed around a **Zero-Knowledge** and **100% Offline** architecture. It locally encrypts and protects credentials, payment cards, secure notes, identity documents, and API tokens without ever transmitting any data over the network.
+
+<p align="center">
+  <img src="assets/icons/caveau_icon.png" alt="Caveau Icon" width="128" />
+</p>
 
 ---
 
-## Caratteristiche Principali
+## Key Features
 
-- **Zero-Knowledge & 100% Offline**: Nessun server remoto, nessun account cloud e nessun tracciamento. I dati risiedono unicamente all'interno del dispositivo.
-- **Cifratura Hardware-Backed**: Archiviazione sicura tramite `flutter_secure_storage`, sfruttando **Android Keystore (AES-256)** e **iOS Keychain con Secure Enclave**.
-- **Autenticazione Ibrida**: Accesso biometrico rapido (Face ID, Touch ID, impronta digitale) con fallback su **Master PIN** (hashing a 5.000 round SHA-256 + salt a 256-bit) e protezione anti-brute force con blocco progressivo.
-- **Privacy Shield**: Oscuramento e sfocatura istantanea dell'app quando passa in background o nell'app switcher del sistema operativo per prevenire screenshot e visualizzazioni accidentali.
--  **Auto-Lock & Auto-Clearing Clipboard**: Blocco automatico della sessione per inattività e cancellazione automatica dei dati sensibili copiati negli appunti dopo un intervallo configurabile (default 30s).
-- **Categorie Supportate**:
-  - **Login / Credenziali** (username, password, URL, campi personalizzati)
-  - **Carte di Pagamento** (con interfaccia mockup interattiva)
-  - **Note Sicure** (crittografate a tutto schermo)
-  - **Identità & Documenti**
-  - **Token API & Chiavi Segrete**
-- **Generatore di Password & Entropia**: Generatore crittografico configurabile con stima dell'entropia (bit) e livello di robustezza.
-- **Security Audit**: Dashboard per il monitoraggio della salute del vault, con identificazione automatica di password deboli, duplicate o compromesse e calcolo del punteggio complessivo di sicurezza.
-- **Backup & Ripristino Cifrati**: Esportazione sicura del vault cifrato con password utente e verifica di integrità tramite checksum SHA-256.
+- **Zero-Knowledge & 100% Offline**: No remote servers, no cloud accounts, and no telemetry tracking. All data resides exclusively on the local device.
+- **Hardware-Backed Encryption**: Secure storage powered by `flutter_secure_storage`, leveraging **Android Keystore (AES-256)** and **iOS Keychain with Secure Enclave isolation**.
+- **Hybrid Authentication**: Fast biometric access (Face ID, Touch ID, fingerprint) with fallback to a **Master PIN** (5,000 rounds of iterative SHA-256 hashing + 256-bit salt) and progressive brute-force lockout protection.
+- **Privacy Shield**: Instant app blurring and obscuration when transitioning to the background or OS app switcher to prevent unintended visibility and screenshots.
+- **Auto-Lock & Auto-Clearing Clipboard**: Configurable session timeout on inactivity and automatic clipboard clearing for copied sensitive data (default: 30s).
+- **Multi-Language Support (5 Languages)**: Native support for **English (`en`)**, **Italian (`it`)**, **Spanish (`es`)**, **French (`fr`)**, and **German (`de`)** with runtime language switching.
+- **Supported Categories**:
+  - **Logins & Credentials** (username, password, URL, custom fields)
+  - **Payment Cards** (with interactive visual card mockup)
+  - **Secure Notes** (fullscreen encrypted notes)
+  - **Identities & Documents**
+  - **API Tokens & Secret Keys**
+- **Password Generator & Entropy**: Cryptographically secure generator with real-time entropy estimation (bits) and strength scoring.
+- **Security Audit**: Vault health monitoring dashboard with automatic detection of weak or reused passwords and overall security scoring.
+- **Encrypted Backup & Restore**: Password-protected vault export and import with SHA-256 checksum integrity verification.
 
 ---
 
-## Architettura & Stack Tecnologico
+## Architecture & Tech Stack
 
-Il progetto adotta un pattern **Clean Architecture / MVVM** con gestione reattiva dello stato tramite **Provider**:
+The project follows a **Clean Architecture / MVVM** pattern with reactive state management via **Provider**:
 
 ```text
 lib/
-├── core/            # Servizi crittografici (Auth, Storage, Clipboard), costanti e tema Dark Cyber
-├── models/          # Modelli dati (VaultItem, SecuritySettings, CustomField)
+├── core/            # Cryptographic services (Auth, Storage, Clipboard), constants, localization & Dark Cyber theme
+├── models/          # Data models (VaultItem, SecuritySettings, CustomField)
 ├── providers/       # State management (AuthProvider, VaultProvider, SettingsProvider)
-└── views/           # UI Material 3 (Auth, Vault, Generatore, Audit, Impostazioni, Widget)
+└── views/           # Material 3 UI (Auth, Vault, Generator, Audit, Settings, Widgets)
 ```
 
 - **Framework**: [Flutter](https://flutter.dev) (Dart SDK `^3.9.2`)
 - **State Management**: `provider`
-- **Sicurezza & Biometria**: `flutter_secure_storage`, `local_auth`, `crypto`
+- **Security & Biometrics**: `flutter_secure_storage`, `local_auth`, `crypto`
 - **Design System**: Material 3 Dark Cyber (Obsidian `#0B0F19`, Indigo `#6366F1`, Emerald `#10B981`)
 
 ---
 
-## Prerequisiti & Avvio Rapido
+## Prerequisites & Quick Start
 
-### Prerequisiti
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (versione compatibile con Dart >= 3.9)
-- Android Studio / Xcode per l'esecuzione su emulatore o dispositivo fisico
+### Prerequisites
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (version compatible with Dart >= 3.9)
+- Android Studio / Xcode for running on an emulator or physical device
 
-### Installazione
+### Installation
 
-1. **Clona il repository:**
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/stiavelli21/Caveau.git
    cd Caveau/caveau
    ```
 
-2. **Installa le dipendenze:**
+2. **Install dependencies:**
    ```bash
    flutter pub get
    ```
 
-3. **Avvia l'applicazione:**
+3. **Run the application:**
    ```bash
    flutter run
    ```
 
-4. **Compilazione Release (APK Android):**
+4. **Build Release (Android APK):**
    ```bash
    flutter build apk --release
    ```
 
 ---
 
-## Sicurezza & Note Piattaforma
+## Platform & Security Notes
 
-- **Android**: L'activity principale estende `FlutterFragmentActivity` per il supporto biometrico e il backup automatico di sistema è disabilitato (`android:allowBackup="false"` in `AndroidManifest.xml`) per impedire estrazioni non autorizzate.
-- **iOS**: Configurato con chiave `NSFaceIDUsageDescription` in `Info.plist` per l'accesso autorizzato ai sensori biometrici Face ID.
+- **Android**: The main activity extends `FlutterFragmentActivity` for biometric authentication support, and system backup is disabled (`android:allowBackup="false"` in `AndroidManifest.xml`) to prevent unauthorized data extraction.
+- **iOS**: Configured with the `NSFaceIDUsageDescription` key in `Info.plist` for authorized access to Face ID biometric sensors.
 
 ---
 
-## Licenza
+## License
 
-Progetto distribuito ad uso personale e open source. Consultare i dettagli del repository per ulteriori informazioni.
+This project is distributed for personal and open-source use. See repository details for more information.

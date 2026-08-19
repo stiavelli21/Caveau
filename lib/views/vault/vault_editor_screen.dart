@@ -2,17 +2,29 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_brand_terms.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../models/vault_item.dart';
 import '../../providers/vault_provider.dart';
 import '../generator/password_generator_screen.dart';
 import '../widgets/password_strength_bar.dart';
 
+/// Form screen for creating or editing vault entries.
+/// 
+/// Adapts input fields dynamically based on the selected [VaultCategory]:
+/// - [VaultCategory.login]: Username, password with show/hide, password generator integration, website URL
+/// - [VaultCategory.card]: Cardholder name, card number, expiry date, CVV, and card PIN
+/// - [VaultCategory.identity]: Email, phone number, identity document number
+/// - [VaultCategory.note]: Multi-line encrypted text
+/// - [VaultCategory.apiKey]: API token / secret key with show/hide toggle
+/// - Shared: Title (required), category choice chips, favorite toggle, general notes, and dynamic custom fields
 class VaultEditorScreen extends StatefulWidget {
+  /// Existing item when in edit mode; null when creating a new record.
   final VaultItem? initialItem;
+
+  /// Optional pre-selected category when creating a new record.
   final VaultCategory? preselectedCategory;
 
+  /// Creates a [VaultEditorScreen] instance.
   const VaultEditorScreen({
     super.key,
     this.initialItem,
@@ -33,19 +45,20 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
   late TextEditingController _websiteController;
   late TextEditingController _notesController;
 
-  // Card fields
+  // Card category controllers
   late TextEditingController _cardHolderController;
   late TextEditingController _cardNumberController;
   late TextEditingController _cardExpiryController;
   late TextEditingController _cardCvvController;
   late TextEditingController _cardPinController;
 
-  // Identity / API
+  // Identity / API category controllers
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _idNumberController;
   late TextEditingController _apiKeySecretController;
 
+  // Field visibility states
   bool _obscurePassword = true;
   bool _obscureCvv = true;
   bool _obscureCardPin = true;
@@ -102,6 +115,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
     super.dispose();
   }
 
+  /// Validates inputs and persists item create/update via [VaultProvider].
   void _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -140,6 +154,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
     }
   }
 
+  /// Opens the password generator tool and auto-fills the password field upon selection.
   void _openGenerator() {
     Navigator.of(context).push(
       CupertinoPageRoute(
@@ -154,6 +169,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
     );
   }
 
+  /// Displays dialog prompting for new custom field label, value, and secret toggle.
   void _addCustomField() {
     final l10n = context.l10n;
     showDialog(
@@ -262,6 +278,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
       appBar: AppBar(
         title: Text(isEditing ? l10n.editItemTitle : l10n.newItemTitle),
         actions: [
+          // Favorite Toggle
           IconButton(
             icon: Icon(
               _isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
@@ -269,6 +286,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
             ),
             onPressed: () => setState(() => _isFavorite = !_isFavorite),
           ),
+          // Save Checkmark Action
           IconButton(
             icon: const Icon(Icons.check_rounded, color: AppColors.success),
             onPressed: _save,
@@ -288,301 +306,301 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Category Segmented Selector
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: VaultCategory.values.map((cat) {
-                    final isSelected = _category == cat;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(l10n.categoryDisplayName(cat)),
-                        selected: isSelected,
-                        selectedColor: AppColors.primary.withValues(alpha: 0.25),
-                        onSelected: (selected) {
-                          if (selected) setState(() => _category = cat);
-                        },
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Title Field
-              TextFormField(
-                controller: _titleController,
-                validator: (val) =>
-                    val == null || val.trim().isEmpty ? l10n.titleRequiredValidation : null,
-                decoration: InputDecoration(
-                  labelText: '${l10n.titleLabel} *',
-                  hintText: 'Google, Netflix, Revolut...',
-                  prefixIcon: const Icon(Icons.label_outline_rounded),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Dynamic Category Specific Fields
-              if (_category == VaultCategory.login) ...[
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.usernameLabel,
-                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: l10n.passwordLabel,
-                    prefixIcon: const Icon(Icons.lock_outline_rounded),
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () =>
-                              setState(() => _obscurePassword = !_obscurePassword),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.auto_fix_high_rounded,
-                              color: AppColors.primaryLight),
-                          tooltip: l10n.passwordGeneratorTooltip,
-                          onPressed: _openGenerator,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                PasswordStrengthBar(password: _passwordController.text),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _websiteController,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    labelText: l10n.websiteLabel,
-                    prefixIcon: const Icon(Icons.link_rounded),
-                  ),
-                ),
-              ] else if (_category == VaultCategory.card) ...[
-                TextFormField(
-                  controller: _cardHolderController,
-                  decoration: InputDecoration(
-                    labelText: l10n.cardHolderLabel,
-                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _cardNumberController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.cardNumberLabel,
-                    hintText: '1234 5678 9012 3456',
-                    prefixIcon: const Icon(Icons.credit_card_rounded),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _cardExpiryController,
-                        decoration: InputDecoration(
-                          labelText: l10n.cardExpiryLabel,
-                          hintText: 'MM/YY',
-                          prefixIcon: const Icon(Icons.calendar_today_rounded),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _cardCvvController,
-                        obscureText: _obscureCvv,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: l10n.cardCvvLabel,
-                          prefixIcon: const Icon(Icons.security_rounded),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureCvv
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined),
-                            onPressed: () =>
-                                setState(() => _obscureCvv = !_obscureCvv),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _cardPinController,
-                  obscureText: _obscureCardPin,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.cardPinLabel,
-                    prefixIcon: const Icon(Icons.pin_rounded),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscureCardPin
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined),
-                      onPressed: () =>
-                          setState(() => _obscureCardPin = !_obscureCardPin),
-                    ),
-                  ),
-                ),
-              ] else if (_category == VaultCategory.identity) ...[
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: l10n.emailLabel,
-                    prefixIcon: const Icon(Icons.email_outlined),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: l10n.phoneLabel,
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _idNumberController,
-                  decoration: InputDecoration(
-                    labelText: l10n.idNumberLabel,
-                    prefixIcon: const Icon(Icons.badge_outlined),
-                  ),
-                ),
-              ] else if (_category == VaultCategory.note) ...[
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 8,
-                  decoration: InputDecoration(
-                    labelText: l10n.notesLabel,
-                    hintText: '...',
-                    alignLabelWithHint: true,
-                  ),
-                ),
-              ] else if (_category == VaultCategory.apiKey) ...[
-                TextFormField(
-                  controller: _apiKeySecretController,
-                  obscureText: _obscureApiSecret,
-                  decoration: InputDecoration(
-                    labelText: l10n.apiKeySecretLabel,
-                    prefixIcon: const Icon(Icons.vpn_key_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscureApiSecret
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined),
-                      onPressed: () =>
-                          setState(() => _obscureApiSecret = !_obscureApiSecret),
-                    ),
-                  ),
-                ),
-              ],
-
-              if (_category != VaultCategory.note) ...[
-                const SizedBox(height: 16),
-                // Notes Field
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    labelText: '${l10n.notesLabel} (${l10n.optionalLabel})',
-                    alignLabelWithHint: true,
-                  ),
-                ),
-              ],
-
-              // Custom Fields List
-              if (_customFields.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Text(
-                  l10n.customFieldsSection,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ..._customFields.asMap().entries.map((entry) {
-                  final idx = entry.key;
-                  final field = entry.value;
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                field.label,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              Text(
-                                field.isSecret ? '••••••••' : field.value,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: AppColors.dangerLight, size: 20),
-                          onPressed: () {
-                            setState(() => _customFields.removeAt(idx));
+                // Category Segmented Choice Chips Selector
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: VaultCategory.values.map((cat) {
+                      final isSelected = _category == cat;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(l10n.categoryDisplayName(cat)),
+                          selected: isSelected,
+                          selectedColor: AppColors.primary.withValues(alpha: 0.25),
+                          onSelected: (selected) {
+                            if (selected) setState(() => _category = cat);
                           },
                         ),
-                      ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Item Title Field (Mandatory)
+                TextFormField(
+                  controller: _titleController,
+                  validator: (val) =>
+                      val == null || val.trim().isEmpty ? l10n.titleRequiredValidation : null,
+                  decoration: InputDecoration(
+                    labelText: '${l10n.titleLabel} *',
+                    hintText: 'Google, Netflix, Revolut...',
+                    prefixIcon: const Icon(Icons.label_outline_rounded),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Dynamic Category-Specific Fields
+                if (_category == VaultCategory.login) ...[
+                  TextFormField(
+                    controller: _usernameController,
+                    decoration: InputDecoration(
+                      labelText: l10n.usernameLabel,
+                      prefixIcon: const Icon(Icons.person_outline_rounded),
                     ),
-                  );
-                }),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      labelText: l10n.passwordLabel,
+                      prefixIcon: const Icon(Icons.lock_outline_rounded),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () =>
+                                setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.auto_fix_high_rounded,
+                                color: AppColors.primaryLight),
+                            tooltip: l10n.passwordGeneratorTooltip,
+                            onPressed: _openGenerator,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  PasswordStrengthBar(password: _passwordController.text),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _websiteController,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(
+                      labelText: l10n.websiteLabel,
+                      prefixIcon: const Icon(Icons.link_rounded),
+                    ),
+                  ),
+                ] else if (_category == VaultCategory.card) ...[
+                  TextFormField(
+                    controller: _cardHolderController,
+                    decoration: InputDecoration(
+                      labelText: l10n.cardHolderLabel,
+                      prefixIcon: const Icon(Icons.person_outline_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _cardNumberController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: l10n.cardNumberLabel,
+                      hintText: '1234 5678 9012 3456',
+                      prefixIcon: const Icon(Icons.credit_card_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _cardExpiryController,
+                          decoration: InputDecoration(
+                            labelText: l10n.cardExpiryLabel,
+                            hintText: 'MM/YY',
+                            prefixIcon: const Icon(Icons.calendar_today_rounded),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _cardCvvController,
+                          obscureText: _obscureCvv,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: l10n.cardCvvLabel,
+                            prefixIcon: const Icon(Icons.security_rounded),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscureCvv
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined),
+                              onPressed: () =>
+                                  setState(() => _obscureCvv = !_obscureCvv),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _cardPinController,
+                    obscureText: _obscureCardPin,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: l10n.cardPinLabel,
+                      prefixIcon: const Icon(Icons.pin_rounded),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureCardPin
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined),
+                        onPressed: () =>
+                            setState(() => _obscureCardPin = !_obscureCardPin),
+                      ),
+                    ),
+                  ),
+                ] else if (_category == VaultCategory.identity) ...[
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: l10n.emailLabel,
+                      prefixIcon: const Icon(Icons.email_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: l10n.phoneLabel,
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _idNumberController,
+                    decoration: InputDecoration(
+                      labelText: l10n.idNumberLabel,
+                      prefixIcon: const Icon(Icons.badge_outlined),
+                    ),
+                  ),
+                ] else if (_category == VaultCategory.note) ...[
+                  TextFormField(
+                    controller: _notesController,
+                    maxLines: 8,
+                    decoration: InputDecoration(
+                      labelText: l10n.notesLabel,
+                      hintText: '...',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ] else if (_category == VaultCategory.apiKey) ...[
+                  TextFormField(
+                    controller: _apiKeySecretController,
+                    obscureText: _obscureApiSecret,
+                    decoration: InputDecoration(
+                      labelText: l10n.apiKeySecretLabel,
+                      prefixIcon: const Icon(Icons.vpn_key_outlined),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureApiSecret
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined),
+                        onPressed: () =>
+                            setState(() => _obscureApiSecret = !_obscureApiSecret),
+                      ),
+                    ),
+                  ),
+                ],
+
+                if (_category != VaultCategory.note) ...[
+                  const SizedBox(height: 16),
+                  // Additional Notes Field
+                  TextFormField(
+                    controller: _notesController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      labelText: '${l10n.notesLabel} (${l10n.optionalLabel})',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ],
+
+                // Custom Dynamic Fields List
+                if (_customFields.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.customFieldsSection,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ..._customFields.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final field = entry.value;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  field.label,
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  field.isSecret ? '••••••••' : field.value,
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline,
+                                color: AppColors.dangerLight, size: 20),
+                            onPressed: () {
+                              setState(() => _customFields.removeAt(idx));
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _addCustomField,
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(l10n.addCustomFieldButton),
+                ),
+
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: _save,
+                  child: Text(l10n.saveButton),
+                ),
               ],
-
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _addCustomField,
-                icon: const Icon(Icons.add_rounded),
-                label: Text(l10n.addCustomFieldButton),
-              ),
-
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: _save,
-                child: Text(l10n.saveButton),
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

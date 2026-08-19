@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Widget wrapper that enables returning to the previous screen by swiping
-/// from left to right across the screen.
+/// Gesture wrapper that enables popping/dismissing screens via left-to-right swipe gestures.
+/// 
+/// Provides native-like iOS interactive pop gesture behavior uniformly across Android and iOS,
+/// complete with haptic feedback when triggered.
 class SwipeBackWrapper extends StatefulWidget {
+  /// The underlying screen widget wrapped by this gesture detector.
   final Widget child;
+
+  /// Optional custom callback executed instead of default `Navigator.of(context).pop()`.
   final VoidCallback? onSwipeBack;
 
+  /// Creates a [SwipeBackWrapper] around [child].
   const SwipeBackWrapper({
     super.key,
     required this.child,
@@ -18,6 +24,7 @@ class SwipeBackWrapper extends StatefulWidget {
 }
 
 class _SwipeBackWrapperState extends State<SwipeBackWrapper> {
+  /// Cumulative horizontal drag distance during the current gesture.
   double _dragDistance = 0;
 
   void _handleDragStart(DragStartDetails details) {
@@ -30,7 +37,8 @@ class _SwipeBackWrapperState extends State<SwipeBackWrapper> {
 
   void _handleDragEnd(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? details.velocity.pixelsPerSecond.dx;
-    // Check if the gesture is a deliberate left-to-right swipe
+    
+    // Check if the gesture is a deliberate left-to-right swipe (high velocity > 250 px/s or distance > 80 px)
     if (velocity > 250 || (velocity >= 0 && _dragDistance > 80)) {
       HapticFeedback.lightImpact();
       if (widget.onSwipeBack != null) {

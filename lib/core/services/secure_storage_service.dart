@@ -4,9 +4,21 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../models/vault_item.dart';
 import '../../models/security_settings.dart';
 
+/// Hardware-backed secure storage service for Caveau.
+/// 
+/// Encapsulates interactions with [FlutterSecureStorage], leveraging:
+/// - Android Keystore (AES-256 encryption with automatic recovery reset)
+/// - iOS & macOS Keychain (with `first_unlock_this_device` accessibility)
+/// 
+/// Manages:
+/// - Master PIN hashes and salts
+/// - Security configuration preferences
+/// - Vault item records and index indexing
+/// - Password-protected encrypted backup exports and verified imports
 class SecureStorageService {
   final FlutterSecureStorage _storage;
 
+  /// Initializes [SecureStorageService] with optional injected [FlutterSecureStorage] instance for testing.
   SecureStorageService({FlutterSecureStorage? storage})
       : _storage = storage ??
             const FlutterSecureStorage(
@@ -21,13 +33,18 @@ class SecureStorageService {
               ),
             );
 
+  // Storage key constants
   static const String _keyMasterPinHash = 'caveau_master_pin_hash';
   static const String _keyMasterPinSalt = 'caveau_master_pin_salt';
   static const String _keySecuritySettings = 'caveau_security_settings';
   static const String _keyVaultIndex = 'caveau_vault_index';
   static const String _itemPrefix = 'caveau_item_';
 
-  // --- Master PIN Management ---
+  // ===========================================================================
+  // MASTER PIN & SALT MANAGEMENT
+  // ===========================================================================
+
+  /// Persists the stretched Master PIN [hash] and its associated cryptographic [salt].
   Future<void> saveMasterPin({
     required String hash,
     required String salt,
@@ -36,20 +53,27 @@ class SecureStorageService {
     await _storage.write(key: _keyMasterPinSalt, value: salt);
   }
 
+  /// Retrieves the stored Master PIN hash from secure hardware storage.
   Future<String?> getMasterPinHash() async {
     return await _storage.read(key: _keyMasterPinHash);
   }
 
+  /// Retrieves the stored Master PIN salt from secure hardware storage.
   Future<String?> getMasterPinSalt() async {
     return await _storage.read(key: _keyMasterPinSalt);
   }
 
+  /// Checks whether a Master PIN has been saved in secure storage.
   Future<bool> hasMasterPin() async {
     final hash = await getMasterPinHash();
     return hash != null && hash.isNotEmpty;
   }
 
-  // --- Security Settings ---
+  // ===========================================================================
+  // SECURITY SETTINGS PERSISTENCE
+  // ===========================================================================
+
+  /// Saves the user's [SecuritySettings] serialized JSON to secure storage.
   Future<void> saveSecuritySettings(SecuritySettings settings) async {
     await _storage.write(
       key: _keySecuritySettings,
@@ -57,17 +81,24 @@ class SecureStorageService {
     );
   }
 
+  /// Loads [SecuritySettings] from secure storage, falling back to default values if not found or corrupted.
   Future<SecuritySettings> getSecuritySettings() async {
     try {
       final raw = await _storage.read(key: _keySecuritySettings);
       if (raw != null && raw.isNotEmpty) {
         return SecuritySettings.deserialize(raw);
       }
-    } catch (_) {}
+    } catch (_) {
+      // Return default settings on read or parse failure
+    }
     return const SecuritySettings();
   }
 
-  // --- Vault Items ---
+  // ===========================================================================
+  // VAULT ITEMS & INDEXING
+  // ===========================================================================
+
+  /// Retrieves the list of stored vault item IDs from the index key.
   Future<List<String>> _getVaultIndex() async {
     try {
       final raw = await _storage.read(key: _keyVaultIndex);
@@ -75,14 +106,18 @@ class SecureStorageService {
         final List<dynamic> decoded = jsonDecode(raw) as List<dynamic>;
         return decoded.map((e) => e.toString()).toList();
       }
-    } catch (_) {}
+    } catch (_) {
+      // In case of corrupt index, fallback to empty list
+    }
     return [];
   }
 
+  /// Writes the updated list of vault item [ids] to the index key.
   Future<void> _saveVaultIndex(List<String> ids) async {
     await _storage.write(key: _keyVaultIndex, value: jsonEncode(ids));
   }
 
+  /// Saves or updates a [VaultItem] in secure storage and maintains the index.
   Future<void> saveVaultItem(VaultItem item) async {
     final ids = await _getVaultIndex();
     if (!ids.contains(item.id)) {
@@ -95,16 +130,21 @@ class SecureStorageService {
     );
   }
 
+  /// Fetches a single [VaultItem] by its unique [id], or `null` if not found.
   Future<VaultItem?> getVaultItem(String id) async {
     try {
       final raw = await _storage.read(key: '$_itemPrefix$id');
       if (raw != null) {
         return VaultItem.deserialize(raw);
       }
-    } catch (_) {}
+    } catch (_) {
+      // Return null on parsing failure
+    }
     return null;
   }
 
+  /// Retrieves all vault items, automatically cleaning orphaned index keys,
+  /// and returning them sorted: favorites first, followed by most recently modified.
   Future<List<VaultItem>> getAllVaultItems() async {
     final ids = await _getVaultIndex();
     final List<VaultItem> items = [];
@@ -118,11 +158,12 @@ class SecureStorageService {
       }
     }
 
+    // Clean up index if orphaned IDs were found
     if (validIds.length != ids.length) {
       await _saveVaultIndex(validIds);
     }
 
-    // Sort by favorite first, then updated recently
+    // Sort order: Favorites pinned to top, then sorted descending by update timestamp
     items.sort((a, b) {
       if (a.isFavorite != b.isFavorite) {
         return a.isFavorite ? -1 : 1;
@@ -133,6 +174,7 @@ class SecureStorageService {
     return items;
   }
 
+  /// Deletes a vault item by [id] from secure storage and removes it from the index.
   Future<void> deleteVaultItem(String id) async {
     final ids = await _getVaultIndex();
     ids.remove(id);
@@ -140,11 +182,19 @@ class SecureStorageService {
     await _storage.delete(key: '$_itemPrefix$id');
   }
 
+  /// Completely wipes all data stored in secure storage (Master PIN, settings, all vault items).
   Future<void> clearAllData() async {
     await _storage.deleteAll();
   }
 
-  // --- Encrypted Backup & Restore ---
+  // ===========================================================================
+  // ENCRYPTED BACKUP & RESTORE
+  // ===========================================================================
+
+  /// Exports all vault items into a password-protected JSON backup envelope.
+  /// 
+  /// Derives an encryption key from [backupPassword] using SHA-256, encrypts the payload
+  /// using a byte stream cipher, and computes a SHA-256 integrity checksum.
   Future<String> exportEncryptedBackup(String backupPassword) async {
     final items = await getAllVaultItems();
     final payloadJson = jsonEncode({
@@ -153,15 +203,16 @@ class SecureStorageService {
       'items': items.map((i) => i.toJson()).toList(),
     });
 
-    // Derive key using SHA-256 for simple portable password hash wrapping
+    // Derive key using SHA-256 for password-based encryption wrapping
     final keyBytes = sha256.convert(utf8.encode(backupPassword)).bytes;
     final payloadBytes = utf8.encode(payloadJson);
     
-    // XOR stream cipher with key stream for local export container
+    // XOR stream cipher with derived key stream for portable encrypted backup payload
     final encryptedBytes = List<int>.generate(payloadBytes.length, (i) {
       return payloadBytes[i] ^ keyBytes[i % keyBytes.length];
     });
 
+    // Compute SHA-256 checksum over ciphertext for tamper-detection
     final checksum = sha256.convert(encryptedBytes).toString();
     final finalExport = {
       'caveau_backup': 'v1',
@@ -172,21 +223,27 @@ class SecureStorageService {
     return jsonEncode(finalExport);
   }
 
+  /// Imports and restores vault items from an encrypted [backupJson] envelope using [backupPassword].
+  /// 
+  /// Verifies format version, validates the SHA-256 checksum, decrypts data,
+  /// and persists all parsed items into the vault. Returns the total count of imported items.
   Future<int> importEncryptedBackup(String backupJson, String backupPassword) async {
     final Map<String, dynamic> backup = jsonDecode(backupJson) as Map<String, dynamic>;
     if (backup['caveau_backup'] != 'v1') {
-      throw const FormatException('Formato di backup non riconosciuto');
+      throw const FormatException('Unrecognized backup format');
     }
 
     final String dataB64 = backup['data'] as String;
     final String checksum = backup['checksum'] as String;
     final encryptedBytes = base64Decode(dataB64);
 
+    // Validate ciphertext integrity
     final actualChecksum = sha256.convert(encryptedBytes).toString();
     if (actualChecksum != checksum) {
-      throw const FormatException('File di backup corrotto o manomesso');
+      throw const FormatException('Corrupted or tampered backup file');
     }
 
+    // Decrypt payload using derived password key
     final keyBytes = sha256.convert(utf8.encode(backupPassword)).bytes;
     final decryptedBytes = List<int>.generate(encryptedBytes.length, (i) {
       return encryptedBytes[i] ^ keyBytes[i % keyBytes.length];
@@ -196,6 +253,7 @@ class SecureStorageService {
     final payload = jsonDecode(payloadJson) as Map<String, dynamic>;
     final List<dynamic> itemsList = payload['items'] as List<dynamic>;
 
+    // Save each imported item into local secure storage
     int importedCount = 0;
     for (final rawItem in itemsList) {
       final item = VaultItem.fromJson(rawItem as Map<String, dynamic>);

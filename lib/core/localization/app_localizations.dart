@@ -159,6 +159,8 @@ abstract class AppLocalizations {
   String get identityCopiedFeedback;
   String get apiKeyCopiedFeedback;
   String get backupCopiedFeedback;
+  String get openInBrowserTooltip;
+  String get cannotOpenUrlFeedback;
 
   // --- Vault Editor Screen ---
   String get editItemTitle;
@@ -610,6 +612,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get backupCopiedFeedback => 'Backup cifrato copiato negli appunti';
 
   @override
+  String get openInBrowserTooltip => 'Apri nel browser';
+
+  @override
+  String get cannotOpenUrlFeedback => 'Impossibile aprire il link web';
+
+  @override
   String get editItemTitle => 'Modifica Elemento';
 
   @override
@@ -709,7 +717,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get weakPasswordsStat => '${AppBrandTerms.password} Deboli';
 
   @override
-  String get reusedPasswordsStat => 'Riutilizzate';
+  String get reusedPasswordsStat => '${AppBrandTerms.password} Riutilizzate';
 
   @override
   String get weakPasswordsSection => '${AppBrandTerms.password} Deboli o Troppo Brevi';
@@ -777,7 +785,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get privacyShieldTileTitle => 'Privacy Shield';
 
   @override
-  String get privacyShieldTileSubtitle => 'Oscura la schermata nel multitasking dell\'OS';
+  String get privacyShieldTileSubtitle => 'Oscura multitasking e blocca registrazioni schermo e screenshot';
 
   @override
   String get clearClipboardTileTitle => 'Svuota Appunti Automaticamente';
@@ -1312,6 +1320,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupCopiedFeedback => 'Encrypted backup copied to clipboard';
 
   @override
+  String get openInBrowserTooltip => 'Open in browser';
+
+  @override
+  String get cannotOpenUrlFeedback => 'Unable to open web link';
+
+  @override
   String get editItemTitle => 'Edit Item';
 
   @override
@@ -1411,7 +1425,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weakPasswordsStat => 'Weak ${AppBrandTerms.password}s';
 
   @override
-  String get reusedPasswordsStat => 'Reused';
+  String get reusedPasswordsStat => 'Reused ${AppBrandTerms.password}s';
 
   @override
   String get weakPasswordsSection => 'Weak or Too Short ${AppBrandTerms.password}s';
@@ -1479,7 +1493,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privacyShieldTileTitle => 'Privacy Shield';
 
   @override
-  String get privacyShieldTileSubtitle => 'Obscure screen in OS app switcher/multitasking';
+  String get privacyShieldTileSubtitle => 'Obscure screen in multitasking and block screen recordings';
 
   @override
   String get clearClipboardTileTitle => 'Auto-Clear Clipboard';
@@ -2014,6 +2028,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupCopiedFeedback => 'Copia de seguridad cifrada copiada al portapapeles';
 
   @override
+  String get openInBrowserTooltip => 'Abrir en el navegador';
+
+  @override
+  String get cannotOpenUrlFeedback => 'No se puede abrir el enlace web';
+
+  @override
   String get editItemTitle => 'Editar Elemento';
 
   @override
@@ -2113,7 +2133,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get weakPasswordsStat => 'Contraseñas Débiles';
 
   @override
-  String get reusedPasswordsStat => 'Reutilizadas';
+  String get reusedPasswordsStat => 'Contraseñas Reutilizadas';
 
   @override
   String get weakPasswordsSection => 'Contraseñas Débiles o Cortas';
@@ -2181,7 +2201,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get privacyShieldTileTitle => 'Escudo de Privacidad';
 
   @override
-  String get privacyShieldTileSubtitle => 'Oculta la pantalla en el selector de apps del SO';
+  String get privacyShieldTileSubtitle => 'Oculta la pantalla en multitarea y bloquea grabaciones de pantalla';
 
   @override
   String get clearClipboardTileTitle => 'Limpieza Automática del Portapapeles';
@@ -2716,6 +2736,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get backupCopiedFeedback => 'Sauvegarde chiffrée copiée dans le presse-papiers';
 
   @override
+  String get openInBrowserTooltip => 'Ouvrir dans le navigateur';
+
+  @override
+  String get cannotOpenUrlFeedback => 'Impossible d\'ouvrir le lien web';
+
+  @override
   String get editItemTitle => 'Modifier l\'Élément';
 
   @override
@@ -2815,7 +2841,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get weakPasswordsStat => 'Mots de Passe Faibles';
 
   @override
-  String get reusedPasswordsStat => 'Réutilisés';
+  String get reusedPasswordsStat => 'Mots de Passe Réutilisés';
 
   @override
   String get weakPasswordsSection => 'Mots de Passe Faibles ou Courts';
@@ -2883,7 +2909,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get privacyShieldTileTitle => 'Bouclier de Confidentialité';
 
   @override
-  String get privacyShieldTileSubtitle => 'Masque l\'écran dans le multitâche du système';
+  String get privacyShieldTileSubtitle => 'Masque l\'écran dans le multitâche et bloque les enregistrements vidéo';
 
   @override
   String get clearClipboardTileTitle => 'Effacement Automatique du Presse-papiers';
@@ -3418,6 +3444,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get backupCopiedFeedback => 'Verschlüsseltes Backup in die Zwischenablage kopiert';
 
   @override
+  String get openInBrowserTooltip => 'Im Browser öffnen';
+
+  @override
+  String get cannotOpenUrlFeedback => 'Weblink konnte nicht geöffnet werden';
+
+  @override
   String get editItemTitle => 'Eintrag Bearbeiten';
 
   @override
@@ -3517,7 +3549,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get weakPasswordsStat => 'Schwache Passwörter';
 
   @override
-  String get reusedPasswordsStat => 'Wiederverwendet';
+  String get reusedPasswordsStat => 'Wiederverwendete Passwörter';
 
   @override
   String get weakPasswordsSection => 'Schwache oder zu kurze Passwörter';
@@ -3585,7 +3617,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get privacyShieldTileTitle => 'Datenschutz-Schild';
 
   @override
-  String get privacyShieldTileSubtitle => 'Verdeckt den Bildschirm in der App-Übersicht des Systems';
+  String get privacyShieldTileSubtitle => 'Verdeckt Bildschirm im Multitasking und blockiert Videoaufnahmen';
 
   @override
   String get clearClipboardTileTitle => 'Zwischenablage Automatisch Leeren';

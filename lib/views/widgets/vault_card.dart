@@ -7,16 +7,32 @@ import '../../models/vault_item.dart';
 import '../../providers/vault_provider.dart';
 import '../vault/vault_editor_screen.dart';
 
+/// Actions available in the [VaultCard] contextual popup menu.
 enum VaultCardAction { copy, edit, delete }
 
+/// Reusable list card displaying a summary of a [VaultItem] in the dashboard.
+/// Features a category icon badge, item title, dynamic subtitle, favorite toggle button,
+/// and a contextual menu for quick copy, edit, and deletion.
 class VaultCard extends StatelessWidget {
+  /// The vault record displayed by this card.
   final VaultItem item;
+
+  /// Callback triggered when the user taps on the card to view full details.
   final VoidCallback onTap;
+
+  /// Callback triggered when toggling the favorite star icon.
   final VoidCallback onToggleFavorite;
+
+  /// Optional callback to customize navigation when editing this item.
   final VoidCallback? onEdit;
+
+  /// Optional callback to customize item deletion.
   final VoidCallback? onDelete;
+
+  /// Duration in seconds for the auto-clearing clipboard feedback.
   final int clipboardClearSeconds;
 
+  /// Creates a [VaultCard] widget.
   const VaultCard({
     super.key,
     required this.item,
@@ -27,6 +43,7 @@ class VaultCard extends StatelessWidget {
     this.clipboardClearSeconds = 30,
   });
 
+  /// Maps [VaultCategory] to an appropriate Material icon.
   IconData _getCategoryIcon() {
     switch (item.category) {
       case VaultCategory.login:
@@ -42,6 +59,7 @@ class VaultCard extends StatelessWidget {
     }
   }
 
+  /// Maps [VaultCategory] to its visual accent color.
   Color _getCategoryColor() {
     switch (item.category) {
       case VaultCategory.login:
@@ -57,6 +75,7 @@ class VaultCard extends StatelessWidget {
     }
   }
 
+  /// Resolves the secondary preview text shown underneath the title based on item category.
   String _getSubtitle(AppLocalizations l10n) {
     switch (item.category) {
       case VaultCategory.login:
@@ -79,6 +98,7 @@ class VaultCard extends StatelessWidget {
     }
   }
 
+  /// Extracts the most relevant secret/field for one-tap copying from the card menu.
   String? _getQuickCopyValue() {
     switch (item.category) {
       case VaultCategory.login:
@@ -94,6 +114,7 @@ class VaultCard extends StatelessWidget {
     }
   }
 
+  /// Localized title for the quick-copy action item in the popup menu.
   String _getCopyActionTitle(AppLocalizations l10n) {
     switch (item.category) {
       case VaultCategory.login:
@@ -109,6 +130,7 @@ class VaultCard extends StatelessWidget {
     }
   }
 
+  /// Localized snackbar feedback message displayed after copying.
   String _getCopyFeedbackLabel(AppLocalizations l10n) {
     switch (item.category) {
       case VaultCategory.login:
@@ -124,6 +146,7 @@ class VaultCard extends StatelessWidget {
     }
   }
 
+  /// Copies sensitive text to the clipboard and displays floating feedback.
   void _copy(BuildContext context, String value) {
     final l10n = context.l10n;
     ClipboardService.copyWithAutoClear(value, autoClearSeconds: clipboardClearSeconds);
@@ -155,6 +178,7 @@ class VaultCard extends StatelessWidget {
     );
   }
 
+  /// Displays a confirmation dialog before permanently deleting the vault item.
   void _confirmDelete(BuildContext context) async {
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
@@ -284,7 +308,7 @@ class VaultCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                // Icon Avatar
+                // Category Icon Avatar
                 Container(
                   width: 44,
                   height: 44,
@@ -303,7 +327,7 @@ class VaultCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 14),
-                // Title and Subtitle
+                // Title and Dynamic Subtitle
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +363,7 @@ class VaultCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                // Favorite Star
+                // Pinned Favorite Toggle Button
                 IconButton(
                   icon: Icon(
                     item.isFavorite
@@ -353,7 +377,7 @@ class VaultCard extends StatelessWidget {
                   tooltip: item.isFavorite ? 'Favorites' : 'Favorites',
                   onPressed: onToggleFavorite,
                 ),
-                // 3-dots Menu for Copy, Edit, Delete
+                // Contextual 3-dots Menu for Copy, Edit, and Delete
                 PopupMenuButton<VaultCardAction>(
                   icon: const Icon(
                     Icons.more_vert_rounded,
@@ -455,6 +479,7 @@ class VaultCard extends StatelessWidget {
   }
 }
 
+/// Helper extension providing human-friendly fallback labels for identity items.
 extension VaultItemExtension on VaultItem {
   String get fullNameOrEmail {
     if (email != null && email!.isNotEmpty) return email!;

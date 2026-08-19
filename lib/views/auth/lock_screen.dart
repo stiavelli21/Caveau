@@ -7,6 +7,13 @@ import '../../providers/settings_provider.dart';
 import '../widgets/language_selector_button.dart';
 import '../widgets/vault_logo.dart';
 
+/// Screen displayed when the vault is locked.
+/// 
+/// Provides:
+/// - Language selector button in the top app bar for instant multilingual switching
+/// - Automatic biometric prompt trigger when the app enters the foreground (with lifecycle guard)
+/// - Fallback Master PIN text input with show/hide toggle
+/// - Anti-brute-force lockout messaging and countdown display
 class LockScreen extends StatefulWidget {
   const LockScreen({super.key});
 
@@ -23,6 +30,7 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Auto-trigger biometric prompt after initial frame layout if biometrics are enabled
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _triggerBiometricsIfAllowed();
     });
@@ -37,11 +45,14 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-trigger biometric prompt when returning to foreground
     if (state == AppLifecycleState.resumed) {
       _triggerBiometricsIfAllowed();
     }
   }
 
+  /// Triggers biometric authentication if enabled in settings and supported by hardware.
+  /// If [isManual] is false, silently fails without popping intrusive error banners.
   Future<void> _triggerBiometricsIfAllowed({bool isManual = false}) async {
     if (_isAuthenticating || !mounted) return;
 
@@ -69,6 +80,7 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// Verifies the entered Master PIN.
   void _submitPin() async {
     final pin = _pinController.text.trim();
     if (pin.isEmpty) return;
@@ -166,7 +178,7 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePin
-                                  ? Icons.visibility_outlined
+                                   ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
                             ),
                             onPressed: () =>
@@ -175,7 +187,7 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
                         ),
                       ),
 
-                      // Error message
+                      // Error message container
                       if (errorMessage != null) ...[
                         const SizedBox(height: 12),
                         Container(

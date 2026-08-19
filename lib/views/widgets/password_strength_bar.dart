@@ -3,9 +3,12 @@ import '../../core/constants/app_colors.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/utils/password_generator.dart';
 
+/// Visual password strength meter displaying segmented colored bars and real-time entropy evaluations.
 class PasswordStrengthBar extends StatelessWidget {
+  /// The password string currently being typed or evaluated.
   final String password;
 
+  /// Creates a [PasswordStrengthBar] evaluating [password].
   const PasswordStrengthBar({
     super.key,
     required this.password,
@@ -13,15 +16,17 @@ class PasswordStrengthBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hide bar if no password has been entered yet
     if (password.isEmpty) {
       return const SizedBox.shrink();
     }
 
     final l10n = context.l10n;
     final strength = PasswordGenerator.evaluateStrength(password);
-    final segments = 4;
+    const int segments = 4;
     int filledSegments = 1;
 
+    // Calculate how many segments (1 to 4) should be highlighted
     switch (strength) {
       case PasswordStrength.veryWeak:
         filledSegments = 1;
@@ -42,6 +47,7 @@ class PasswordStrengthBar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
+        // Segmented indicator bars
         Row(
           children: [
             for (int i = 0; i < segments; i++) ...[
@@ -61,6 +67,7 @@ class PasswordStrengthBar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
+        // Strength tier label and character count
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +10,7 @@ import 'package:caveau/providers/vault_provider.dart';
 import 'package:caveau/providers/settings_provider.dart';
 import 'package:caveau/core/services/secure_storage_service.dart';
 import 'package:caveau/core/services/auth_service.dart';
+import 'package:caveau/core/services/screen_security_service.dart';
 import 'package:caveau/providers/auth_provider.dart';
 import 'package:caveau/views/auth/lock_screen.dart';
 import 'package:caveau/views/auth/onboarding_screen.dart';
@@ -21,8 +23,8 @@ import 'package:caveau/views/security/security_audit_screen.dart';
 import 'package:caveau/views/generator/password_generator_screen.dart';
 import 'package:caveau/views/settings/settings_screen.dart';
 import 'package:caveau/views/vault/vault_home_screen.dart';
-import 'package:caveau/core/constants/app_colors.dart';
 
+/// Test wrapper helper that registers mock/real providers and configures MaterialApp with localizations.
 Widget _buildTestApp({
   required Widget child,
   VaultProvider? vaultProvider,
@@ -55,6 +57,7 @@ Widget _buildTestApp({
   );
 }
 
+/// Comprehensive widget and interaction test suite for Caveau UI components.
 void main() {
   testWidgets('PrivacyShield renders overlay and text properly when active in Italian and English', (WidgetTester tester) async {
     await tester.pumpWidget(
@@ -130,6 +133,40 @@ void main() {
 
     // Password is now revealed
     expect(find.text('SuperSecretPassword123!'), findsOneWidget);
+  });
+
+  testWidgets('VaultDetailScreen renders website URL with open-in-browser and copy actions', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final vaultProvider = VaultProvider(storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+
+    final item = VaultItem(
+      id: 'test_item_web',
+      title: 'Google Account',
+      category: VaultCategory.login,
+      username: 'user@gmail.com',
+      password: 'SuperSecretPassword123!',
+      websiteUrl: 'https://accounts.google.com',
+      updatedAt: DateTime.now(),
+    );
+    vaultProvider.items.add(item);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        vaultProvider: vaultProvider,
+        settingsProvider: settingsProvider,
+        child: const VaultDetailScreen(itemId: 'test_item_web'),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.text('https://accounts.google.com'), findsOneWidget);
+    expect(find.byIcon(Icons.open_in_new_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.link_rounded), findsOneWidget);
+
+    // Tap the open link button
+    await tester.tap(find.byIcon(Icons.open_in_new_rounded));
+    await tester.pump();
   });
 
   testWidgets('VaultDetailScreen renders secure note item correctly', (WidgetTester tester) async {
@@ -702,8 +739,59 @@ void main() {
     // Verify error message for mismatch
     expect(find.text('Le password di backup non corrispondono'), findsOneWidget);
   });
+
+  testWidgets('CaveauApp activates PrivacyShield when screen recording is detected', (WidgetTester tester) async {
+    final mockScreenSec = _MockScreenSecurityService();
+    await tester.pumpWidget(
+      CaveauRoot(
+        screenSecurityService: mockScreenSec,
+      ),
+    );
+    await tester.pump();
+
+    // Verify initial state: PrivacyShield is not active
+    expect(find.text('Caveau Protetto'), findsNothing);
+
+    // Simulate screen recording start
+    mockScreenSec.emitCapture(true);
+    await tester.pump();
+
+    // Verify PrivacyShield overlay is now active
+    expect(find.text('Caveau Protetto'), findsOneWidget);
+
+    // Simulate screen recording stop
+    mockScreenSec.emitCapture(false);
+    await tester.pump();
+
+    // Verify PrivacyShield overlay has been removed
+    expect(find.text('Caveau Protetto'), findsNothing);
+    mockScreenSec.dispose();
+  });
 }
 
+/// Mock test implementation of [ScreenSecurityService] for controlling screen capture stream in widget tests.
+class _MockScreenSecurityService extends ScreenSecurityService {
+  final StreamController<bool> _ctrl = StreamController<bool>.broadcast();
+  bool _active = false;
+
+  @override
+  Stream<bool> get onScreenCaptureChanged => _ctrl.stream;
+
+  @override
+  Future<bool> isScreenCaptureActive() async => _active;
+
+  void emitCapture(bool active) {
+    _active = active;
+    _ctrl.add(active);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.close();
+  }
+}
+
+/// Mock test implementation of [AuthService] for biometric invocation tracking.
 class _MockTestAuthService extends AuthService {
   int biometricsCallCount = 0;
 
@@ -717,6 +805,7 @@ class _MockTestAuthService extends AuthService {
   }
 }
 
+/// Mock test implementation of [AuthProvider] controlling authentication status in widget tests.
 class _TestAuthProvider extends AuthProvider {
   final _MockTestAuthService mockAuth;
 
@@ -738,3 +827,4 @@ class _TestAuthProvider extends AuthProvider {
     return await mockAuth.authenticateWithBiometrics();
   }
 }
+

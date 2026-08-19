@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/services/clipboard_service.dart';
@@ -9,9 +10,22 @@ import '../../providers/vault_provider.dart';
 import '../widgets/password_strength_bar.dart';
 import 'vault_editor_screen.dart';
 
+/// Screen displaying the complete decrypted details of a specific vault item.
+/// 
+/// Capabilities:
+/// - Category icon and color branding badge
+/// - Visual interactive credit card mockup for [VaultCategory.card]
+/// - Individual secret reveal/hide toggles (`••••••••`) for passwords, PINs, CVVs, and API keys
+/// - Live password entropy strength bar
+/// - Clipboard copy with automatic background clearing timer
+/// - Dynamic rendering of custom dynamic fields
+/// - Direct navigation to [VaultEditorScreen] for updating
+/// - Safe deletion dialog flow
 class VaultDetailScreen extends StatefulWidget {
+  /// Unique identifier of the vault item to inspect.
   final String itemId;
 
+  /// Creates a [VaultDetailScreen] instance.
   const VaultDetailScreen({
     super.key,
     required this.itemId,
@@ -24,14 +38,17 @@ class VaultDetailScreen extends StatefulWidget {
 class _VaultDetailScreenState extends State<VaultDetailScreen> {
   final Map<String, bool> _obscuredMap = {};
 
+  /// Returns whether the specified field key is currently obscured.
   bool _isObscured(String key) => _obscuredMap[key] ?? true;
 
+  /// Toggles visibility of the specified sensitive field key.
   void _toggleObscured(String key) {
     setState(() {
       _obscuredMap[key] = !(_obscuredMap[key] ?? true);
     });
   }
 
+  /// Copies field content to the system clipboard and schedules automatic memory clearing.
   void _copyField(String label, String value, int autoClearSeconds) {
     final l10n = context.l10n;
     ClipboardService.copyWithAutoClear(value, autoClearSeconds: autoClearSeconds);
@@ -63,6 +80,61 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
     );
   }
 
+  /// Safely opens a website URL in the external system browser.
+  Future<void> _openUrl(String urlString) async {
+    var trimmed = urlString.trim();
+    if (trimmed.isEmpty) return;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      trimmed = 'https://$trimmed';
+    }
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null) {
+      try {
+        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (!launched && mounted) {
+          _showCannotOpenUrlSnackBar();
+        }
+      } catch (_) {
+        if (mounted) {
+          _showCannotOpenUrlSnackBar();
+        }
+      }
+    } else {
+      if (mounted) {
+        _showCannotOpenUrlSnackBar();
+      }
+    }
+  }
+
+  /// Displays error feedback when a URL cannot be opened.
+  void _showCannotOpenUrlSnackBar() {
+    final l10n = context.l10n;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.surfaceElevated,
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                l10n.cannotOpenUrlFeedback,
+                style: const TextStyle(color: AppColors.textPrimary),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: AppColors.border),
+        ),
+      ),
+    );
+  }
+
+  /// Displays a destructive confirmation dialog and deletes the item upon user approval.
   void _delete(VaultItem item) async {
     final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
@@ -140,6 +212,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
     }
   }
 
+  /// Returns the corresponding category icon.
   IconData _getCategoryIcon(VaultCategory category) {
     switch (category) {
       case VaultCategory.login:
@@ -155,6 +228,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
     }
   }
 
+  /// Returns the accent theme color for the specified category.
   Color _getCategoryColor(VaultCategory category) {
     switch (category) {
       case VaultCategory.login:
@@ -197,6 +271,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
       appBar: AppBar(
         title: Text(item.title),
         actions: [
+          // Favorite Star Toggle Button
           IconButton(
             icon: Icon(
               item.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
@@ -204,6 +279,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
             ),
             onPressed: () => vaultProvider.toggleFavorite(item.id),
           ),
+          // Edit Item Shortcut
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () {
@@ -214,6 +290,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
               );
             },
           ),
+          // Delete Item Action
           IconButton(
             icon: const Icon(Icons.delete_outline, color: AppColors.dangerLight),
             onPressed: () => _delete(item),
@@ -231,7 +308,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Category Badge
+              // Category Header Badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
@@ -402,6 +479,8 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                 title: l10n.websiteLabel,
                 value: item.websiteUrl!,
                 icon: Icons.link_rounded,
+                onOpen: () => _openUrl(item.websiteUrl!),
+                openTooltip: l10n.openInBrowserTooltip,
                 onCopy: () => _copyField(l10n.websiteLabel, item.websiteUrl!, 0),
               ),
 
@@ -473,7 +552,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                 onCopy: () => _copyField(l10n.apiKeySecretLabel, item.apiKeySecret!, autoClear),
               ),
 
-            // Custom fields
+            // Dynamic Custom Fields
             for (final cf in item.customFields)
               _buildFieldTile(
                 title: cf.label,
@@ -485,7 +564,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                 onCopy: () => _copyField(cf.label, cf.value, cf.isSecret ? autoClear : 0),
               ),
 
-            // Notes
+            // Encrypted Notes Section
             if (item.notes != null && item.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
@@ -556,6 +635,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
   );
 }
 
+  /// Helper rendering an individual field tile with icon, title, secret masking, and quick-copy action.
   Widget _buildFieldTile({
     required String title,
     required String value,
@@ -563,6 +643,8 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
     bool isSecret = false,
     bool isObscured = false,
     VoidCallback? onToggleObscure,
+    VoidCallback? onOpen,
+    String? openTooltip,
     required VoidCallback onCopy,
   }) {
     return Container(
@@ -589,15 +671,29 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                SelectableText(
-                  isSecret && isObscured ? '••••••••••••' : value,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: isSecret && !isObscured ? 'monospace' : null,
-                  ),
-                ),
+                onOpen != null
+                    ? GestureDetector(
+                        onTap: onOpen,
+                        child: Text(
+                          value,
+                          style: const TextStyle(
+                            color: AppColors.primaryLight,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.primary,
+                          ),
+                        ),
+                      )
+                    : SelectableText(
+                        isSecret && isObscured ? '••••••••••••' : value,
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: isSecret && !isObscured ? 'monospace' : null,
+                        ),
+                      ),
               ],
             ),
           ),
@@ -611,6 +707,13 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                 size: 20,
               ),
               onPressed: onToggleObscure,
+            ),
+          if (onOpen != null)
+            IconButton(
+              icon: const Icon(Icons.open_in_new_rounded,
+                  color: AppColors.primaryLight, size: 20),
+              tooltip: openTooltip,
+              onPressed: onOpen,
             ),
           IconButton(
             icon: const Icon(Icons.copy_rounded,

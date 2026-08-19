@@ -1,155 +1,156 @@
-# AGENTS.md - Guida Architetturale per Agenti AI
+# AGENTS.md - Architectural Guide for AI Agents
 
-Questo documento fornisce agli agenti AI (e agli sviluppatori) una panoramica completa sul funzionamento di **Caveau**, sulle decisioni architetturali e sull'organizzazione del codice all'interno della cartella `lib/`.
-
----
-
-## Panoramica dell'Applicazione
-
-**Caveau** è un'applicazione mobile sviluppata in **Flutter** per la memorizzazione locale, sicura e offline di credenziali, password, carte di pagamento, note crittografate e token API.
-
-### Principi Fondamentali di Funzionamento
-1. **Zero-Knowledge & 100% Offline**: Nessun dato viene trasmesso via rete o salvato su server remoti. Tutti i dati risiedono esclusivamente nel dispositivo.
-2. **Hardware-Backed Encryption**: Utilizza il package `flutter_secure_storage` per cifrare i dati sfruttando l'**Android Keystore** (con AES-256) e l'**iOS Keychain** con isolamento Secure Enclave (`first_unlock_this_device`).
-3. **Autenticazione Ibrida (`local_auth`)**: Supporta sensori biometrici (Face ID, Touch ID, impronta digitale) con fallback su Master PIN cifrato (hash iterativo a 5.000 round SHA-256 + salt a 256-bit) e protezione anti brute-force.
-4. **Protezione OS & Privacy**:
-   - **Privacy Shield**: Oscuramento immediato della schermata nel multitasking dell'OS tramite overlay con filtro blur.
-   - **Auto-Lock**: Blocco automatico della sessione configurabile all'uscita o dopo inattività.
-   - **Auto-Clearing Clipboard**: Cancellazione automatica dei dati sensibili copiati negli appunti dopo un timer (es. 30s).
-5. **Supporto Multilingua Nativo a 5 Lingue**:
-   - Supporto per **Italiano (`it`)**, **Inglese (`en`)**, **Spagnolo (`es`)**, **Francese (`fr`)** e **Tedesco (`de`)**.
-   - Commutazione dinamica della lingua sia in fase di autenticazione iniziale (`LockScreen` e `OnboardingScreen`) sia dalle impostazioni di sicurezza (`SettingsScreen`).
+This document provides AI agents (and developers) with a comprehensive overview of how **Caveau** operates, its architectural decisions, and the code organization within the `lib/` directory.
 
 ---
 
-## Architettura della Cartella `lib/`
+## Application Overview
 
-La struttura del progetto segue il pattern **Clean Architecture / MVVM** con gestione dello stato reattiva tramite `provider`:
+**Caveau** is a mobile application developed in **Flutter** for the local, secure, and offline storage of credentials, passwords, payment cards, encrypted notes, identity documents, and API tokens.
+
+### Fundamental Operating Principles
+1. **Zero-Knowledge & 100% Offline**: No data is transmitted over the network or saved on remote servers. All data resides strictly on the local device.
+2. **Hardware-Backed Encryption**: Utilizes the `flutter_secure_storage` package to encrypt data leveraging the **Android Keystore** (with AES-256) and the **iOS Keychain** with Secure Enclave isolation (`first_unlock_this_device`).
+3. **Hybrid Authentication (`local_auth`)**: Supports biometric sensors (Face ID, Touch ID, fingerprint) with fallback to an encrypted Master PIN (5,000 rounds of iterative SHA-256 hashing + 256-bit salt) and progressive anti-brute-force protection.
+4. **OS Protection & Privacy**:
+   - **Privacy Shield**: Immediate screen obscuration during OS multitasking/app switching via a blur overlay filter.
+   - **Auto-Lock**: Configurable automatic session locking upon leaving the app or following inactivity.
+   - **Auto-Clearing Clipboard**: Automatic clearing of sensitive data copied to the clipboard after a set timer (default: 30s).
+5. **Native 5-Language Multilingual Support**:
+   - Out-of-the-box support for **English (`en`)**, **Italian (`it`)**, **Spanish (`es`)**, **French (`fr`)**, and **German (`de`)**.
+   - Dynamic language switching during initial authentication (`LockScreen` and `OnboardingScreen`) as well as from settings (`SettingsScreen`).
+
+---
+
+## Architecture of the `lib/` Directory
+
+The project architecture follows the **Clean Architecture / MVVM** pattern with reactive state management using `provider`:
 
 ```
 lib/
-├── main.dart                      # Entry point, registrazione Provider, AppLifecycleObserver, init intl date
-├── core/                          # Costanti, servizi di basso livello, utility e localizzazione
+├── main.dart                      # Entry point, Provider registration, AppLifecycleObserver, intl date initialization
+├── core/                          # Constants, low-level services, utilities, and localization
 │   ├── constants/
-│   │   ├── app_brand_terms.dart   # Costanti immutabili di brand e standard tecnici (Caveau, PIN, Face ID, ecc.)
-│   │   ├── app_colors.dart        # Palette cromatica cyber-dark (Obsidian, Indigo, Emerald)
-│   │   └── app_theme.dart         # Configurazione Material 3 Dark Theme
+│   │   ├── app_brand_terms.dart   # Immutable brand terms and technical standards (Caveau, PIN, Face ID, etc.)
+│   │   ├── app_colors.dart        # Cyber-dark color palette (Obsidian, Indigo, Emerald)
+│   │   └── app_theme.dart         # Material 3 Dark Theme configuration
 │   ├── localization/
-│   │   └── app_localizations.dart # Sistema di traduzione type-safe (IT, EN, ES, FR, DE) ed extension BuildContext.l10n
+│   │   └── app_localizations.dart # Type-safe translation system (IT, EN, ES, FR, DE) and BuildContext.l10n extension
 │   ├── services/
-│   │   ├── auth_service.dart      # Wrapper biometrico (local_auth) e logica hash/salt Master PIN
-│   │   ├── secure_storage_service.dart # Wrapper flutter_secure_storage, CRUD e backup cifrato
-│   │   └── clipboard_service.dart # Copia sicura con timer per svuotamento automatico appunti
+│   │   ├── auth_service.dart      # Biometric wrapper (local_auth) and Master PIN hash/salt logic
+│   │   ├── secure_storage_service.dart # Wrapper for flutter_secure_storage, CRUD, and encrypted backup
+│   │   ├── screen_security_service.dart # Platform channel for Android FLAG_SECURE & iOS capture detection
+│   │   └── clipboard_service.dart # Secure clipboard copy with auto-clear timer
 │   └── utils/
-│       └── password_generator.dart# Generatore crittografico, calcolo entropia e robustezza
-├── models/                        # Modelli di dominio e serializzazione JSON
-│   ├── vault_item.dart            # Modello elementi del vault (Login, Card, Note, Identità, API)
-│   └── security_settings.dart     # Impostazioni di sicurezza (auto-lock, biometria, privacy, languageCode)
+│       └── password_generator.dart# Cryptographic password generator, entropy and strength calculation
+├── models/                        # Domain models and JSON serialization
+│   ├── vault_item.dart            # Vault item model (Login, Card, Note, Identity, API)
+│   └── security_settings.dart     # Security preferences (auto-lock, biometrics, privacy, languageCode)
 ├── providers/                     # State Management (ChangeNotifier)
-│   ├── auth_provider.dart         # Stato autenticazione (setup, bloccato, sbloccato, lockout)
-│   ├── vault_provider.dart        # Gestione elementi, filtri, ricerca, preferiti, audit score
-│   └── settings_provider.dart     # Gestione e persistenza impostazioni di sicurezza e lingua
-└── views/                         # Interfaccia grafica (UI / Schermate e Widget riutilizzabili)
+│   ├── auth_provider.dart         # Authentication state (setup, locked, authenticated, lockout)
+│   ├── vault_provider.dart        # Item management, filters, search, favorites, audit score
+│   └── settings_provider.dart     # Security & language settings management and persistence
+└── views/                         # Graphical user interface (UI / Screens and reusable widgets)
     ├── auth/
-    │   ├── lock_screen.dart       # Schermata di sblocco con selettore lingua (Biometria / PIN Master)
-    │   └── onboarding_screen.dart # Creazione Master PIN al primo avvio con selettore lingua
+    │   ├── lock_screen.dart       # Unlock screen with language selector (Biometrics / Master PIN)
+    │   └── onboarding_screen.dart # Initial Master PIN creation with language selector
     ├── vault/
-    │   ├── vault_home_screen.dart # Dashboard principale, lista elementi, ricerca e filtri
-    │   ├── vault_detail_screen.dart # Dettaglio con toggle visualizzazione e mockup carta
-    │   └── vault_editor_screen.dart # Form creazione/modifica con generator integrato
+    │   ├── vault_home_screen.dart # Main dashboard, item list, search, and category chips
+    │   ├── vault_detail_screen.dart # Detail view with visibility toggle and credit card mockup
+    │   └── vault_editor_screen.dart # Item creation/edit form with integrated password generator
     ├── generator/
-    │   └── password_generator_screen.dart # Schermata utility per generare password complesse
+    │   └── password_generator_screen.dart # Dedicated utility screen for generating complex passwords
     ├── security/
-    │   └── security_audit_screen.dart # Analisi password deboli e riutilizzate
+    │   └── security_audit_screen.dart # Audit dashboard analyzing weak and reused passwords
     ├── settings/
-    │   └── settings_screen.dart   # Gestione PIN, lingua, backup cifrato e cancellazione dati
+    │   └── settings_screen.dart   # PIN management, language selection, encrypted backup, and data wipe
     └── widgets/
-        ├── language_selector_button.dart # Pulsante e bottom sheet per la selezione rapida della lingua
-        ├── password_strength_bar.dart # Indicatore visivo della robustezza password
-        ├── privacy_shield.dart    # Overlay protettivo per oscuramento multitasking
-        ├── swipe_back_wrapper.dart # Riconoscimento gesture swipe da sinistra a destra per tornare indietro
-        └── vault_card.dart        # Card dell'elemento nella lista con quick copy
+        ├── language_selector_button.dart # Button and modal bottom sheet for quick language switching
+        ├── password_strength_bar.dart # Visual indicator for password strength
+        ├── privacy_shield.dart    # Protective blur overlay for multitasking privacy
+        ├── swipe_back_wrapper.dart # Swipe-from-left gesture recognizer to navigate back
+        └── vault_card.dart        # Vault item list card with quick-copy actions
 ```
 
 ---
 
-## Dettaglio dei Componenti
+## Detailed Component Overview
 
-### 1. `core/` (Logica Trasversale, Localizzazione e Servizi)
+### 1. `core/` (Cross-Cutting Logic, Localization, and Services)
 - **`constants/`**:
-  - `app_brand_terms.dart`: Centralizza i termini speciali di brand e standard tecnologici invarianti (`Caveau`, `PIN`, `Master PIN`, `PIN Master`, `Face ID`, `Touch ID`, `Android Keystore`, `iOS Keychain`, `API Key`, `AES-256`, `SHA-256`, `CVV`, `URL`, `Email`).
-  - `app_colors.dart`: Definisce le costanti colore della UI (sfondo `#0B0F19`, superfici `#131B2E`, accenti `#6366F1` e `#10B981`).
-  - `app_theme.dart`: Centralizza il tema Material 3 scuro, stili dei bottoni, campi input, card e app bar.
+  - `app_brand_terms.dart`: Centralizes invariant brand terms, acronyms, and tech standards (`Caveau`, `PIN`, `Master PIN`, `PIN Master`, `Face ID`, `Touch ID`, `Android Keystore`, `iOS Keychain`, `API Key`, `AES-256`, `SHA-256`, `CVV`, `URL`, `Email`).
+  - `app_colors.dart`: Defines UI color constants (Background `#0B0F19`, Surface `#131B2E`, Accents `#6366F1` and `#10B981`).
+  - `app_theme.dart`: Centralizes Material 3 dark theme styling, button styles, input fields, cards, and app bars.
 - **`localization/`**:
-  - `app_localizations.dart`: Interfaccia astratta `AppLocalizations` e implementazioni complete `AppLocalizationsIt`, `AppLocalizationsEn`, `AppLocalizationsEs`, `AppLocalizationsFr`, `AppLocalizationsDe`. Fornisce il delegato `_AppLocalizationsDelegate`, i metadati delle lingue supportate (`supportedLanguages`) e l'extension `context.l10n`.
+  - `app_localizations.dart`: Abstract interface `AppLocalizations` and full implementations `AppLocalizationsIt`, `AppLocalizationsEn`, `AppLocalizationsEs`, `AppLocalizationsFr`, `AppLocalizationsDe`. Provides the `_AppLocalizationsDelegate`, metadata for supported languages (`supportedLanguages`), and the `context.l10n` extension.
 - **`services/`**:
-  - `secure_storage_service.dart`: Interfaccia sicura con `FlutterSecureStorage`. Gestisce l'indice degli ID, il salvataggio dei singoli record cifrati, l'esportazione di backup cifrati tramite password e l'importazione con verifica checksum SHA-256.
-  - `auth_service.dart`: Interagisce con `local_auth` per la biometria, genera salt casuali crittografici e calcola l'hash iterativo del Master PIN per prevenire attacchi a dizionario.
-  - `clipboard_service.dart`: Gestisce la copia negli appunti di sistema avviando un `Timer` per svuotare i dati dopo un tempo prestabilito (default 30s) se il contenuto corrisponde ancora a quello copiato.
+  - `secure_storage_service.dart`: Secure wrapper around `FlutterSecureStorage`. Handles ID indexing, encrypted record storage, password-protected backup export, and SHA-256 checksum-verified import.
+  - `auth_service.dart`: Interfaces with `local_auth` for biometrics, generates cryptographic random salts, and computes iterative Master PIN hashes to defend against dictionary attacks.
+  - `screen_security_service.dart`: Interfaces with native platform channels to enforce `FLAG_SECURE` (blacking out Android screen recordings and blocking screenshots) and monitor iOS `UIScreen.capturedDidChangeNotification` to automatically trigger `PrivacyShield`.
+  - `clipboard_service.dart`: Manages clipboard operations by launching a `Timer` to clear sensitive contents after a specified duration (default 30s) if the clipboard still contains the copied value.
 - **`utils/`**:
-  - `password_generator.dart`: Genera password ad alta entropia configurabili (maiuscole, minuscole, numeri, simboli, esclusione caratteri ambigui come `Il1O0`) e calcola la robustezza basandosi sull'entropia in bit.
+  - `password_generator.dart`: Generates configurable high-entropy passwords (uppercase, lowercase, numbers, symbols, ambiguous character exclusion such as `Il1O0`) and calculates strength based on bit entropy.
 
-### 2. `models/` (Dati e Strutture)
-- **`vault_item.dart`**: Modello polimorfo `VaultItem` con supporto per:
-  - Categorie: `login`, `card`, `note`, `identity`, `apiKey`.
-  - Campi standard e lista di `CustomField` (campi personalizzati con flag `isSecret`).
-  - Metodi `toJson()`, `fromJson()`, `serialize()` e `deserialize()`.
-- **`security_settings.dart`**: Modello per memorizzare le preferenze dell'utente: timeout blocco (0s, 30s, 60s, 300s), abilitazione biometria, privacy shield, timeout clipboard, stato di lockout per tentativi falliti e preferenza lingua (`languageCode`: `'it'`, `'en'`, `'es'`, `'fr'`, `'de'`).
+### 2. `models/` (Data & Structures)
+- **`vault_item.dart`**: Polymorphic `VaultItem` model supporting:
+  - Categories: `login`, `card`, `note`, `identity`, `apiKey`.
+  - Standard fields and dynamic `CustomField` list (custom fields with `isSecret` flag).
+  - Methods: `toJson()`, `fromJson()`, `serialize()`, and `deserialize()`.
+- **`security_settings.dart`**: Model storing user security preferences: auto-lock timeout (0s, 30s, 60s, 300s), biometrics enabled, privacy shield enabled, clipboard timeout, failed attempt lockout state, and language preference (`languageCode`: `'it'`, `'en'`, `'es'`, `'fr'`, `'de'`).
 
-### 3. `providers/` (Gestione dello Stato)
-- **`auth_provider.dart`**: Gestisce lo stato `AuthStatus` (`initial`, `setupRequired`, `locked`, `authenticated`), controlla i tentativi falliti e applica il cooldown temporale.
-- **`vault_provider.dart`**: Mantiene in memoria la lista decifrata degli elementi del vault quando la sessione è autenticata. Fornisce computed getters per la ricerca, il filtro per categoria, i preferiti, l'elenco delle password deboli/riutilizzate e il calcolo del `securityScore` (0-100%).
-- **`settings_provider.dart`**: Carica e aggiorna in tempo reale le impostazioni e la lingua salvate nel secure storage (`updateLanguage`).
+### 3. `providers/` (State Management)
+- **`auth_provider.dart`**: Manages `AuthStatus` (`initial`, `setupRequired`, `locked`, `authenticated`), tracks failed login attempts, and enforces cooldown lockout periods.
+- **`vault_provider.dart`**: Holds the decrypted in-memory vault items when authenticated. Provides computed getters for search, category filtering, favorites, weak/reused password audits, and calculates `securityScore` (0-100%).
+- **`settings_provider.dart`**: Loads and updates security settings and active language in real time with persistence in secure storage (`updateLanguage`).
 
-### 4. `views/` (Interfaccia Utente)
-- **`auth/`**: Gestione del primo avvio (`OnboardingScreen`) e sblocco ordinario (`LockScreen`), entrambi dotati di `LanguageSelectorButton` per il cambio istantaneo della lingua.
+### 4. `views/` (User Interface)
+- **`auth/`**: First-launch setup (`OnboardingScreen`) and regular unlock (`LockScreen`), both equipped with `LanguageSelectorButton` for instant language switching.
 - **`vault/`**:
-  - `VaultHomeScreen`: Dashboard con barra di ricerca, chip per categoria, contatori e lista elementi.
-  - `VaultDetailScreen`: Schermata di visualizzazione con pulsanti per mostrare/nascondere dati segreti, copia rapida e rendering a mockup grafico per carte di credito.
-  - `VaultEditorScreen`: Form di inserimento/modifica con validazione e shortcut al generatore di password.
+  - `VaultHomeScreen`: Main dashboard featuring search bar, category chips, counters, and item list.
+  - `VaultDetailScreen`: Detailed item view with reveal/hide secrets toggle, quick copy, and visual credit card mockup rendering.
+  - `VaultEditorScreen`: Add/Edit form with validation and quick shortcut to the password generator.
 - **`generator/` & `security/`**:
-  - `PasswordGeneratorScreen`: Utility per testare e generare password.
-  - `SecurityAuditScreen`: Dashboard per visualizzare il livello di salute del vault e risolvere le vulnerabilità (password deboli o duplicate).
-- **`settings/`**: Gestione cambio PIN, cambio lingua (`LINGUA / LANGUAGE`), opzioni di sicurezza, esportazione/ripristino backup e wipe totale dei dati.
-- **`widgets/`**: Componenti riutilizzabili (`LanguageSelectorButton`, `PrivacyShield`, `VaultCard`, `PasswordStrengthBar`).
+  - `PasswordGeneratorScreen`: Dedicated utility screen for testing and generating customized passwords.
+  - `SecurityAuditScreen`: Vault health monitoring dashboard for identifying and resolving vulnerabilities (weak or duplicate passwords).
+- **`settings/`**: PIN management, language selection (`LINGUA / LANGUAGE`), security toggles, encrypted backup export/import, and total data wipe.
+- **`widgets/`**: Reusable UI components (`LanguageSelectorButton`, `PrivacyShield`, `VaultCard`, `PasswordStrengthBar`).
 
 ### 5. `main.dart`
-- Inizializza i servizi, i formati data `intl` (`it_IT`, `en_US`, `es_ES`, `fr_FR`, `de_DE`) e inietta i Provider tramite `MultiProvider` nel widget `CaveauRoot`.
-- Configura `MaterialApp` con `locale: Locale(settings.languageCode)` e `localizationsDelegates`.
-- Implementa `WidgetsBindingObserver` per monitorare gli eventi di ciclo di vita dell'app (`paused`, `inactive`, `resumed`), attivando istantaneamente il `PrivacyShield` e calcolando il tempo trascorso per l'auto-lock.
+- Initializes core services, `intl` date formatting locales (`it_IT`, `en_US`, `es_ES`, `fr_FR`, `de_DE`), and registers providers using `MultiProvider` in `CaveauRoot`.
+- Configures `MaterialApp` with `locale: Locale(settings.languageCode)` and `localizationsDelegates`.
+- Implements `WidgetsBindingObserver` to monitor app lifecycle states (`paused`, `inactive`, `resumed`), instantly triggering `PrivacyShield` and calculating elapsed background time for auto-lock enforcement.
 
 ---
 
-## Regole di Sviluppo & Sicurezza per Agenti AI
+## Development & Security Rules for AI Agents
 
-Quando modifichi o estendi questa applicazione, devi **SEMPRE rispettare rigorosamente le seguenti regole**:
+When modifying or extending this application, you must **ALWAYS strictly adhere to the following rules**:
 
-### 1. Regola Obbligatoria di Localizzazione Multilingua
-- **Nessuna stringa hardcoded**: È severamente vietato inserire stringhe, testi, etichette, placeholder o messaggi di errore scritti direttamente in codice Dart (es. `'Inserisci il PIN'`).
-- **Traduzione obbligatoria in tutte le 5 lingue**: Qualsiasi nuova frase o termine aggiunto alla UI deve essere dichiarato nell'interfaccia astratta `AppLocalizations` e implementato in **tutte e 5 le classi di lingua**:
-  1. `AppLocalizationsIt` (Italiano)
-  2. `AppLocalizationsEn` (Inglese)
-  3. `AppLocalizationsEs` (Spagnolo)
-  4. `AppLocalizationsFr` (Francese)
-  5. `AppLocalizationsDe` (Tedesco)
-- **Accesso Type-Safe**: Utilizza sempre `context.l10n.<proprieta>` per accedere ai testi localizzati all'interno dei widget.
-- **Utilizzo di `AppBrandTerms`**: Per termini di brand, acronimi e standard invarianti (`Caveau`, `PIN`, `Master PIN`, `PIN Master`, `Face ID`, `Touch ID`, `Android Keystore`, `iOS Keychain`, `API Key`, `AES-256`, `SHA-256`, `CVV`, `URL`, `Email`), usa sempre le costanti di `AppBrandTerms` (es. `${AppBrandTerms.appName}`, `${AppBrandTerms.pinMaster}`).
+### 1. Mandatory Multilingual Localization Rule
+- **No hardcoded strings**: Hardcoded strings, labels, placeholders, or error messages directly in Dart UI code (e.g., `'Enter your PIN'`) are strictly prohibited.
+- **Mandatory translation in all 5 languages**: Any new string or UI label must be declared in the abstract `AppLocalizations` interface and implemented across **all 5 language classes**:
+  1. `AppLocalizationsIt` (Italian)
+  2. `AppLocalizationsEn` (English)
+  3. `AppLocalizationsEs` (Spanish)
+  4. `AppLocalizationsFr` (French)
+  5. `AppLocalizationsDe` (German)
+- **Type-Safe Access**: Always access localized strings via `context.l10n.<property>` within widgets.
+- **Usage of `AppBrandTerms`**: For invariant brand terms, acronyms, and technological standards (`Caveau`, `PIN`, `Master PIN`, `PIN Master`, `Face ID`, `Touch ID`, `Android Keystore`, `iOS Keychain`, `API Key`, `AES-256`, `SHA-256`, `CVV`, `URL`, `Email`), always reference `AppBrandTerms` constants (e.g., `${AppBrandTerms.appName}`, `${AppBrandTerms.pinMaster}`).
 
-### 2. Regole di Crittografia e Sicurezza
-- **Non salvare mai dati sensibili in chiaro** o in storage non protetti come `SharedPreferences` standard. Usa sempre `SecureStorageService`.
-- **Android Activity**: Mantieni `MainActivity` ereditata da `FlutterFragmentActivity` (necessario per il corretto funzionamento di `local_auth` su Android).
-- **Non rimuovere i permessi o configurazioni native**:
-  - `android:allowBackup="false"` in `AndroidManifest.xml` (previene l'estrazione non autorizzata dei dati tramite backup di sistema).
+### 2. Cryptography & Security Rules
+- **Never store sensitive data in plaintext** or in unencrypted stores like standard `SharedPreferences`. Always use `SecureStorageService`.
+- **Android Activity**: Ensure `MainActivity` inherits from `FlutterFragmentActivity` (required for biometric authentication via `local_auth` on Android).
+- **Do not remove native permissions or security configurations**:
+  - `android:allowBackup="false"` in `AndroidManifest.xml` (prevents unauthorized data extraction through OS backups).
   - `NSFaceIDUsageDescription` in `ios/Runner/Info.plist`.
-- **Mantieni la separazione tra UI e Crittografia**: La logica di hashing e derivazione chiavi deve rimanere isolata nei `services/`.
-- **Verifica con i Test**: Dopo ogni modifica a testi o logica, assicurati che la suite `flutter test` venga aggiornata e passi con successo al 100%.
+- **Maintain clear separation between UI and Cryptography**: Hashing, encryption, and key derivation logic must remain isolated within `services/`.
+- **Verify with Tests**: Following any change to logic or localized texts, ensure that the entire `flutter test` test suite is updated and passes 100%.
 
-### 3. Cautela Assoluta e Retrocompatibilità su Backup ed Esportazione
-- **Attenzione Critica alle Modifiche**: Tratta qualsiasi modifica alle funzioni di esportazione (`exportEncryptedBackup`), importazione (`importEncryptedBackup`), o serializzazione dei modelli (`VaultItem.toJson` / `fromJson`) con estrema cautela.
-- **Divieto di Invalidare i Backup Esistenti**: Nessuna modifica al codice deve rendere invalidanti o incompatibili i file di backup generati con versioni precedenti dell'app. Rompere la retrocompatibilità causerebbe la perdita irreversibile delle credenziali per gli utenti che ripristinano un vecchio file.
-- **Versioning e Migrazioni Backward-Compatible**:
-  - Se la struttura del payload, l'involucro JSON o la logica di crittografia del backup devono evolvere, incrementa il tag di versione (es. `'caveau_backup': 'v2'`) garantendo che la funzione `importEncryptedBackup` mantenga il supporto completo ai formati legacy (es. `'v1'`).
-  - L'aggiunta o modifica di proprietà nel modello `VaultItem` deve essere tollerante e prevedere fallback/valori predefiniti in `fromJson`, evitando eccezioni durante il parsing di elementi esportati in versioni precedenti.
-  - Non alterare le modalità di verifica dell'integrità (come il checksum SHA-256) per i formati storici senza gestire la compatibilità all'indietro.
-- **Test di Regressione Obbligatori**: In caso di interventi sui moduli di storage o backup, verifica e garantisci tramite test automatizzati che sia i nuovi file di backup sia quelli generati dalle vecchie versioni vengano importati correttamente e senza perdita di dati.
-
+### 3. Absolute Caution & Backward Compatibility for Backups and Exports
+- **Critical Attention to Changes**: Treat any modifications to backup export (`exportEncryptedBackup`), import (`importEncryptedBackup`), or model serialization (`VaultItem.toJson` / `fromJson`) with extreme care.
+- **Strict Prohibition of Breaking Existing Backups**: No code changes may invalidate or break compatibility with backup files generated by earlier versions of the app. Breaking backward compatibility causes irreversible data loss for users restoring historical backups.
+- **Versioning and Backward-Compatible Migrations**:
+  - If the payload structure, JSON envelope, or encryption strategy evolves, increment the version identifier (e.g., `'caveau_backup': 'v2'`) while ensuring `importEncryptedBackup` retains complete support for legacy formats (e.g., `'v1'`).
+  - Adding or modifying fields in `VaultItem` must be resilient, providing sensible fallbacks/default values in `fromJson` to prevent exceptions when parsing older data.
+  - Do not alter integrity verification methods (such as SHA-256 checksums) for legacy formats without maintaining backward compatibility.
+- **Mandatory Regression Testing**: Whenever storage or backup modules are touched, verify through automated tests that both newly exported backups and legacy backup files can be imported accurately without data loss.

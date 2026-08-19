@@ -4,10 +4,19 @@ import '../../core/constants/app_colors.dart';
 import '../../core/localization/app_localizations.dart';
 import 'vault_logo.dart';
 
+/// Privacy protection overlay widget.
+/// 
+/// Intercepts rendering when the app is placed in the background or OS app switcher,
+/// applying an intense [ImageFilter.blur] and dark overlay to prevent sensitive credentials
+/// from being captured in OS screenshots or multitasking previews.
 class PrivacyShield extends StatelessWidget {
+  /// The main application content underneath the shield.
   final Widget child;
+
+  /// Whether the privacy shield blur and overlay is currently active.
   final bool isShieldActive;
 
+  /// Creates a [PrivacyShield] wrapping [child].
   const PrivacyShield({
     super.key,
     required this.child,
@@ -20,7 +29,10 @@ class PrivacyShield extends StatelessWidget {
 
     return Stack(
       children: [
+        // Underlying main application view
         child,
+
+        // High-security blur and logo overlay activated in background
         if (isShieldActive)
           Positioned.fill(
             child: BackdropFilter(

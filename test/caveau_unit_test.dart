@@ -3,10 +3,15 @@ import 'package:caveau/core/constants/app_brand_terms.dart';
 import 'package:caveau/core/localization/app_localizations.dart';
 import 'package:caveau/core/utils/password_generator.dart';
 import 'package:caveau/core/services/auth_service.dart';
+import 'package:caveau/core/services/screen_security_service.dart';
 import 'package:caveau/models/vault_item.dart';
 import 'package:caveau/models/security_settings.dart';
 
+/// Comprehensive unit test suite verifying core cryptography, data serialization,
+/// security configurations, and multilingual localization assets in Caveau.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('PasswordGenerator Tests', () {
     test('generates password of requested length', () {
       for (final len in [8, 16, 24, 32]) {
@@ -242,4 +247,16 @@ void main() {
       expect(codes, containsAll(['it', 'en', 'es', 'fr', 'de']));
     });
   });
+
+  group('ScreenSecurityService Tests', () {
+    test('handles setSecureFlag and isScreenCaptureActive without unhandled exceptions in test harness', () async {
+      final service = ScreenSecurityService();
+      await service.setSecureFlag(true);
+      await service.setSecureFlag(false);
+      final isActive = await service.isScreenCaptureActive();
+      expect(isActive, isFalse);
+      service.dispose();
+    });
+  });
 }
+
