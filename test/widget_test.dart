@@ -20,6 +20,8 @@ import 'package:caveau/views/widgets/privacy_shield.dart';
 import 'package:caveau/views/security/security_audit_screen.dart';
 import 'package:caveau/views/generator/password_generator_screen.dart';
 import 'package:caveau/views/settings/settings_screen.dart';
+import 'package:caveau/views/vault/vault_home_screen.dart';
+import 'package:caveau/core/constants/app_colors.dart';
 
 Widget _buildTestApp({
   required Widget child,
@@ -530,6 +532,59 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsNothing);
     expect(find.text('Open Settings'), findsOneWidget);
+  });
+
+  testWidgets('VaultHomeScreen has compact FloatingActionButton with only + icon', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final vaultProvider = VaultProvider(storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+    final authProvider = AuthProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        vaultProvider: vaultProvider,
+        settingsProvider: settingsProvider,
+        authProvider: authProvider,
+        child: const VaultHomeScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify FloatingActionButton exists with add icon
+    final fabFinder = find.byType(FloatingActionButton);
+    expect(fabFinder, findsOneWidget);
+    expect(find.descendant(of: fabFinder, matching: find.byIcon(Icons.add_rounded)), findsOneWidget);
+    // Verify there is no Text inside the FAB (it's icon only)
+    expect(find.descendant(of: fabFinder, matching: find.byType(Text)), findsNothing);
+  });
+
+  testWidgets('SettingsScreen renders Backup & Restore section with green border', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final authService = AuthService(storageService: mockStorage);
+    final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: const SettingsScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.scrollUntilVisible(
+      find.text('BACKUP & RIPRISTINO'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('BACKUP & RIPRISTINO'), findsOneWidget);
+    expect(find.text('Esporta Backup Cifrato'), findsOneWidget);
+    expect(find.text('Ripristina Backup'), findsOneWidget);
   });
 }
 

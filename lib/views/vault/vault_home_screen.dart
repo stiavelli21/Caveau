@@ -431,10 +431,10 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
+        tooltip: l10n.newItemFab,
         onPressed: () => _showAddCategoryPicker(context),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(l10n.newItemFab),
+        child: const Icon(Icons.add_rounded, size: 28),
       ),
     );
   }

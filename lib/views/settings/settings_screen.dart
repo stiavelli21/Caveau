@@ -686,7 +686,7 @@ class SettingsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: AppColors.successLight.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   children: [
