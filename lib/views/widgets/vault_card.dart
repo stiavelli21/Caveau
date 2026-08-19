@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/services/clipboard_service.dart';
 import '../../models/vault_item.dart';
 import '../../providers/vault_provider.dart';
@@ -56,25 +57,25 @@ class VaultCard extends StatelessWidget {
     }
   }
 
-  String _getSubtitle() {
+  String _getSubtitle(AppLocalizations l10n) {
     switch (item.category) {
       case VaultCategory.login:
-        return item.username ?? item.websiteUrl ?? 'Nessun username';
+        return item.username ?? item.websiteUrl ?? l10n.noUsername;
       case VaultCategory.card:
         if (item.cardNumber != null && item.cardNumber!.length >= 4) {
           return '•••• ${item.cardNumber!.substring(item.cardNumber!.length - 4)}';
         }
-        return item.cardHolder ?? 'Carta di pagamento';
+        return item.cardHolder ?? l10n.paymentCardSubtitle;
       case VaultCategory.note:
         if (item.notes != null && item.notes!.isNotEmpty) {
           final firstLine = item.notes!.split('\n').first;
           return firstLine.length > 35 ? '${firstLine.substring(0, 35)}...' : firstLine;
         }
-        return 'Nota crittografata';
+        return l10n.encryptedNoteSubtitle;
       case VaultCategory.identity:
         return item.fullNameOrEmail;
       case VaultCategory.apiKey:
-        return 'Chiave di sicurezza crittografata';
+        return l10n.encryptedKeySubtitle;
     }
   }
 
@@ -93,37 +94,38 @@ class VaultCard extends StatelessWidget {
     }
   }
 
-  String _getCopyActionTitle() {
+  String _getCopyActionTitle(AppLocalizations l10n) {
     switch (item.category) {
       case VaultCategory.login:
-        return 'Copia Password';
+        return l10n.copyPassword;
       case VaultCategory.card:
-        return 'Copia Numero Carta';
+        return l10n.copyCardNumber;
       case VaultCategory.note:
-        return 'Copia Nota';
+        return l10n.copyNotes;
       case VaultCategory.identity:
-        return 'Copia Documento / Email';
+        return l10n.copyIdentity;
       case VaultCategory.apiKey:
-        return 'Copia Chiave API';
+        return l10n.copyApiKey;
     }
   }
 
-  String _getCopyFeedbackLabel() {
+  String _getCopyFeedbackLabel(AppLocalizations l10n) {
     switch (item.category) {
       case VaultCategory.login:
-        return 'Password copiata';
+        return l10n.passwordCopiedFeedback;
       case VaultCategory.card:
-        return 'Numero carta copiato';
+        return l10n.cardNumberCopiedFeedback;
       case VaultCategory.note:
-        return 'Testo nota copiato';
+        return l10n.noteTextCopiedFeedback;
       case VaultCategory.identity:
-        return 'Dato identità copiato';
+        return l10n.identityCopiedFeedback;
       case VaultCategory.apiKey:
-        return 'Chiave API copiata';
+        return l10n.apiKeyCopiedFeedback;
     }
   }
 
   void _copy(BuildContext context, String value) {
+    final l10n = context.l10n;
     ClipboardService.copyWithAutoClear(value, autoClearSeconds: clipboardClearSeconds);
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -136,8 +138,8 @@ class VaultCard extends StatelessWidget {
             Expanded(
               child: Text(
                 clipboardClearSeconds > 0
-                    ? '${_getCopyFeedbackLabel()} (auto-clear in ${clipboardClearSeconds}s)'
-                    : _getCopyFeedbackLabel(),
+                    ? '${_getCopyFeedbackLabel(l10n)} (auto-clear in ${clipboardClearSeconds}s)'
+                    : _getCopyFeedbackLabel(l10n),
                 style: const TextStyle(color: AppColors.textPrimary),
               ),
             ),
@@ -154,6 +156,7 @@ class VaultCard extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context) async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -174,10 +177,10 @@ class VaultCard extends StatelessWidget {
               child: const Icon(Icons.delete_outline_rounded, color: AppColors.danger, size: 22),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Elimina Elemento',
-                style: TextStyle(
+                l10n.deleteItemTitle,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -187,7 +190,7 @@ class VaultCard extends StatelessWidget {
           ],
         ),
         content: Text(
-          'Sei sicuro di voler eliminare permanentemente "${item.title}"?\n\nL\'operazione non potrà essere annullata.',
+          l10n.deleteItemConfirmMessage(item.title),
           style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -201,7 +204,7 @@ class VaultCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Annulla'),
+                  child: Text(l10n.cancelButton),
                 ),
               ),
               const SizedBox(width: 12),
@@ -214,7 +217,7 @@ class VaultCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('Elimina'),
+                  child: Text(l10n.deleteButton),
                 ),
               ),
             ],
@@ -240,7 +243,7 @@ class VaultCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '"${item.title}" eliminato dal Caveau',
+                    '"${item.title}" - ${l10n.deleteButton}',
                     style: const TextStyle(color: AppColors.textPrimary),
                   ),
                 ),
@@ -262,6 +265,7 @@ class VaultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final catColor = _getCategoryColor();
     final quickCopyVal = _getQuickCopyValue();
+    final l10n = context.l10n;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -323,7 +327,7 @@ class VaultCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _getSubtitle(),
+                        _getSubtitle(l10n),
                         style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 13,
@@ -346,7 +350,7 @@ class VaultCard extends StatelessWidget {
                         ? AppColors.warning
                         : AppColors.textMuted,
                   ),
-                  tooltip: item.isFavorite ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti',
+                  tooltip: item.isFavorite ? 'Favorites' : 'Favorites',
                   onPressed: onToggleFavorite,
                 ),
                 // 3-dots Menu for Copy, Edit, Delete
@@ -356,7 +360,7 @@ class VaultCard extends StatelessWidget {
                     size: 22,
                     color: AppColors.textSecondary,
                   ),
-                  tooltip: 'Altre opzioni',
+                  tooltip: 'Options',
                   color: AppColors.surfaceElevated,
                   elevation: 8,
                   shape: RoundedRectangleBorder(
@@ -395,7 +399,7 @@ class VaultCard extends StatelessWidget {
                             const Icon(Icons.copy_rounded, size: 18, color: AppColors.primaryLight),
                             const SizedBox(width: 12),
                             Text(
-                              _getCopyActionTitle(),
+                              _getCopyActionTitle(l10n),
                               style: const TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 14,
@@ -405,15 +409,15 @@ class VaultCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: VaultCardAction.edit,
                       child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 18, color: AppColors.textPrimary),
-                          SizedBox(width: 12),
+                          const Icon(Icons.edit_outlined, size: 18, color: AppColors.textPrimary),
+                          const SizedBox(width: 12),
                           Text(
-                            'Modifica',
-                            style: TextStyle(
+                            l10n.editButton,
+                            style: const TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -423,15 +427,15 @@ class VaultCard extends StatelessWidget {
                       ),
                     ),
                     const PopupMenuDivider(),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: VaultCardAction.delete,
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.dangerLight),
-                          SizedBox(width: 12),
+                          const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.dangerLight),
+                          const SizedBox(width: 12),
                           Text(
-                            'Elimina',
-                            style: TextStyle(
+                            l10n.deleteButton,
+                            style: const TextStyle(
                               color: AppColors.dangerLight,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -456,7 +460,6 @@ extension VaultItemExtension on VaultItem {
     if (email != null && email!.isNotEmpty) return email!;
     if (phone != null && phone!.isNotEmpty) return phone!;
     if (idNumber != null && idNumber!.isNotEmpty) return idNumber!;
-    return 'Dati anagrafici';
+    return 'Identity Data';
   }
 }
-

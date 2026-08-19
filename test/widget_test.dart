@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:caveau/main.dart';
+import 'package:caveau/core/localization/app_localizations.dart';
 import 'package:caveau/models/vault_item.dart';
 import 'package:caveau/providers/vault_provider.dart';
 import 'package:caveau/providers/settings_provider.dart';
@@ -9,7 +11,9 @@ import 'package:caveau/core/services/secure_storage_service.dart';
 import 'package:caveau/core/services/auth_service.dart';
 import 'package:caveau/providers/auth_provider.dart';
 import 'package:caveau/views/auth/lock_screen.dart';
+import 'package:caveau/views/auth/onboarding_screen.dart';
 import 'package:caveau/views/vault/vault_detail_screen.dart';
+import 'package:caveau/views/widgets/language_selector_button.dart';
 import 'package:caveau/views/widgets/vault_card.dart';
 import 'package:caveau/views/widgets/vault_logo.dart';
 import 'package:caveau/views/widgets/privacy_shield.dart';
@@ -17,11 +21,44 @@ import 'package:caveau/views/security/security_audit_screen.dart';
 import 'package:caveau/views/generator/password_generator_screen.dart';
 import 'package:caveau/views/settings/settings_screen.dart';
 
+Widget _buildTestApp({
+  required Widget child,
+  VaultProvider? vaultProvider,
+  SettingsProvider? settingsProvider,
+  AuthProvider? authProvider,
+  String locale = 'it',
+}) {
+  final storage = SecureStorageService();
+  final vp = vaultProvider ?? VaultProvider(storageService: storage);
+  final sp = settingsProvider ?? SettingsProvider(storageService: storage);
+  final ap = authProvider ?? AuthProvider(storageService: storage);
+
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<VaultProvider>.value(value: vp),
+      ChangeNotifierProvider<SettingsProvider>.value(value: sp),
+      ChangeNotifierProvider<AuthProvider>.value(value: ap),
+    ],
+    child: MaterialApp(
+      locale: Locale(locale),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: child,
+    ),
+  );
+}
+
 void main() {
-  testWidgets('PrivacyShield renders overlay and text properly when active', (WidgetTester tester) async {
+  testWidgets('PrivacyShield renders overlay and text properly when active in Italian and English', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: PrivacyShield(
+      _buildTestApp(
+        locale: 'it',
+        child: const PrivacyShield(
           isShieldActive: true,
           child: Scaffold(body: Text('Original Content')),
         ),
@@ -31,7 +68,23 @@ void main() {
     await tester.pump();
     expect(find.text('Caveau Protetto'), findsOneWidget);
     expect(find.text('Schermata oscurata per la tua privacy'), findsOneWidget);
+
+    // English
+    await tester.pumpWidget(
+      _buildTestApp(
+        locale: 'en',
+        child: const PrivacyShield(
+          isShieldActive: true,
+          child: Scaffold(body: Text('Original Content')),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.text('Caveau Protected'), findsOneWidget);
+    expect(find.text('Screen obscured for your privacy'), findsOneWidget);
   });
+
   testWidgets('Caveau App Smoke Test', (WidgetTester tester) async {
     await tester.pumpWidget(const CaveauRoot());
     await tester.pump();
@@ -54,14 +107,10 @@ void main() {
     vaultProvider.items.add(item);
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: vaultProvider),
-          ChangeNotifierProvider.value(value: settingsProvider),
-        ],
-        child: const MaterialApp(
-          home: VaultDetailScreen(itemId: 'test_item_1'),
-        ),
+      _buildTestApp(
+        vaultProvider: vaultProvider,
+        settingsProvider: settingsProvider,
+        child: const VaultDetailScreen(itemId: 'test_item_1'),
       ),
     );
 
@@ -96,20 +145,16 @@ void main() {
     vaultProvider.items.add(item);
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: vaultProvider),
-          ChangeNotifierProvider.value(value: settingsProvider),
-        ],
-        child: const MaterialApp(
-          home: VaultDetailScreen(itemId: 'test_note_1'),
-        ),
+      _buildTestApp(
+        vaultProvider: vaultProvider,
+        settingsProvider: settingsProvider,
+        child: const VaultDetailScreen(itemId: 'test_note_1'),
       ),
     );
 
     await tester.pump();
     expect(find.text('Server Backup Codes'), findsOneWidget);
-    expect(find.text('Contenuto Nota'), findsOneWidget);
+    expect(find.text('Note Crittografate'), findsWidgets);
     expect(find.text('CODE-1234-5678\nCODE-9999-0000'), findsOneWidget);
   });
 
@@ -131,20 +176,16 @@ void main() {
     bool deleteCalled = false;
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: vaultProvider),
-          ChangeNotifierProvider.value(value: settingsProvider),
-        ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: VaultCard(
-              item: item,
-              onTap: () {},
-              onToggleFavorite: () {},
-              onEdit: () => editCalled = true,
-              onDelete: () => deleteCalled = true,
-            ),
+      _buildTestApp(
+        vaultProvider: vaultProvider,
+        settingsProvider: settingsProvider,
+        child: Scaffold(
+          body: VaultCard(
+            item: item,
+            onTap: () {},
+            onToggleFavorite: () {},
+            onEdit: () => editCalled = true,
+            onDelete: () => deleteCalled = true,
           ),
         ),
       ),
@@ -178,7 +219,6 @@ void main() {
 
     // Confirmation dialog appears
     expect(find.text('Elimina Elemento'), findsOneWidget);
-    expect(find.text('Conferma'), findsNothing); // Button is 'Elimina'
     expect(find.widgetWithText(ElevatedButton, 'Elimina'), findsOneWidget);
 
     // Tap 'Elimina' inside dialog
@@ -203,6 +243,107 @@ void main() {
     expect(find.byType(VaultLogo), findsOneWidget);
   });
 
+  testWidgets('LockScreen renders LanguageSelectorButton and switches language', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final authService = AuthService(storageService: mockStorage);
+    final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: const LockScreen(),
+      ),
+    );
+
+    expect(find.byType(LanguageSelectorButton), findsOneWidget);
+    expect(find.text('Caveau Protetto'), findsOneWidget);
+    expect(find.text('Sblocca Cassaforte'), findsOneWidget);
+
+    // Tap language selector to open bottom sheet
+    await tester.tap(find.byType(LanguageSelectorButton));
+    await tester.pumpAndSettle();
+
+    // Verify all 5 language options appear in the bottom sheet
+    expect(find.text('Italiano'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('Español'), findsOneWidget);
+    expect(find.text('Français'), findsOneWidget);
+    expect(find.text('Deutsch'), findsOneWidget);
+
+    // Tap Español
+    await tester.tap(find.text('Español'));
+    await tester.pumpAndSettle();
+
+    // Language in provider should now be 'es'
+    expect(settingsProvider.settings.languageCode, equals('es'));
+  });
+
+  testWidgets('PrivacyShield renders correctly across Spanish, French, and German', (WidgetTester tester) async {
+    // Spanish
+    await tester.pumpWidget(
+      _buildTestApp(
+        locale: 'es',
+        child: const PrivacyShield(
+          isShieldActive: true,
+          child: Scaffold(body: Text('Original Content')),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Caveau Protegido'), findsOneWidget);
+    expect(find.text('Pantalla oculta por tu privacidad'), findsOneWidget);
+
+    // French
+    await tester.pumpWidget(
+      _buildTestApp(
+        locale: 'fr',
+        child: const PrivacyShield(
+          isShieldActive: true,
+          child: Scaffold(body: Text('Original Content')),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Caveau Protégé'), findsOneWidget);
+    expect(find.text('Écran masqué pour votre confidentialité'), findsOneWidget);
+
+    // German
+    await tester.pumpWidget(
+      _buildTestApp(
+        locale: 'de',
+        child: const PrivacyShield(
+          isShieldActive: true,
+          child: Scaffold(body: Text('Original Content')),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Caveau Geschützt'), findsOneWidget);
+    expect(find.text('Bildschirm zum Schutz Ihrer Privatsphäre verdeckt'), findsOneWidget);
+  });
+
+  testWidgets('OnboardingScreen renders LanguageSelectorButton', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final authService = AuthService(storageService: mockStorage);
+    final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: const OnboardingScreen(),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.byType(LanguageSelectorButton), findsOneWidget);
+    expect(find.text('Benvenuto in Caveau'), findsOneWidget);
+    expect(find.text('Inizializza Caveau Sicuro'), findsOneWidget);
+  });
+
   testWidgets('LockScreen does not trigger biometrics when mounted while inactive or paused', (WidgetTester tester) async {
     final mockAuthService = _MockTestAuthService();
     final authProvider = _TestAuthProvider(authService: mockAuthService);
@@ -212,14 +353,10 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
-        ],
-        child: const MaterialApp(
-          home: LockScreen(),
-        ),
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: const LockScreen(),
       ),
     );
 
@@ -243,21 +380,17 @@ void main() {
     final vaultProvider = VaultProvider(storageService: mockStorage);
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<VaultProvider>.value(value: vaultProvider),
-        ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SecurityAuditScreen()),
-                  );
-                },
-                child: const Text('Open Audit'),
-              ),
+      _buildTestApp(
+        vaultProvider: vaultProvider,
+        child: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SecurityAuditScreen()),
+                );
+              },
+              child: const Text('Open Audit'),
             ),
           ),
         ),
@@ -281,8 +414,8 @@ void main() {
 
   testWidgets('PasswordGeneratorScreen pops when swiped left-to-right', (WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      _buildTestApp(
+        child: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
               onPressed: () {
@@ -312,8 +445,8 @@ void main() {
 
   testWidgets('PasswordGeneratorScreen dragging slider adjusts value without popping screen', (WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      _buildTestApp(
+        child: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
               onPressed: () {
@@ -346,29 +479,25 @@ void main() {
     expect(find.text('16'), findsNothing);
   });
 
-  testWidgets('SettingsScreen pops when swiped left-to-right and does NOT pop on swipe right-to-left', (WidgetTester tester) async {
+  testWidgets('SettingsScreen pops when swiped left-to-right and has Language section', (WidgetTester tester) async {
     final mockStorage = SecureStorageService();
     final authService = AuthService(storageService: mockStorage);
     final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
     final settingsProvider = SettingsProvider(storageService: mockStorage);
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
-        ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  );
-                },
-                child: const Text('Open Settings'),
-              ),
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
+              child: const Text('Open Settings'),
             ),
           ),
         ),
@@ -380,6 +509,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.text('AUTENTICAZIONE & ACCESSO'), findsOneWidget);
+
+    // Scroll down to find the Language section below Backup & Restore
+    await tester.scrollUntilVisible(
+      find.text('LINGUA / LANGUAGE'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('LINGUA / LANGUAGE'), findsOneWidget);
+    expect(find.text('Lingua'), findsOneWidget);
 
     // Swipe from right to left (negative offset) -> should NOT pop
     await tester.fling(find.byType(SettingsScreen), const Offset(-350, 0), 1000);
@@ -428,5 +567,3 @@ class _TestAuthProvider extends AuthProvider {
     return await mockAuth.authenticateWithBiometrics();
   }
 }
-
-

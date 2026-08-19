@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'core/constants/app_theme.dart';
+import 'core/localization/app_localizations.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/secure_storage_service.dart';
 import 'providers/auth_provider.dart';
@@ -16,8 +18,12 @@ import 'views/widgets/privacy_shield.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inizializza i dati di localizzazione delle date
+  // Inizializza i dati di localizzazione delle date per IT, EN, ES, FR e DE
   await initializeDateFormatting('it_IT', null);
+  await initializeDateFormatting('en_US', null);
+  await initializeDateFormatting('es_ES', null);
+  await initializeDateFormatting('fr_FR', null);
+  await initializeDateFormatting('de_DE', null);
 
   // Dark navigation & status bar
   SystemChrome.setSystemUIOverlayStyle(
@@ -144,6 +150,14 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
       title: 'Caveau',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      locale: Locale(settingsProvider.settings.languageCode),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       builder: (context, child) {
         return PrivacyShield(
           isShieldActive: shouldShowPrivacyShield,

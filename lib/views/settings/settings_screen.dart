@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/vault_provider.dart';
@@ -10,7 +11,72 @@ import '../widgets/swipe_back_wrapper.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  void _showLanguagePicker(BuildContext context, SettingsProvider provider) {
+    final l10n = context.l10n;
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final current = provider.settings.languageCode;
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              0,
+              16,
+              0,
+              MediaQuery.of(ctx).padding.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    l10n.selectLanguageTitle,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const Divider(color: AppColors.border),
+                ...AppLocalizations.supportedLanguages.map((lang) {
+                  final isSelected = current == lang.code;
+                  return ListTile(
+                    leading: Text(lang.flag, style: const TextStyle(fontSize: 22)),
+                    title: Text(
+                      lang.nativeName,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected ? AppColors.primaryLight : AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: lang.nativeName != lang.englishName
+                        ? Text(
+                            lang.englishName,
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          )
+                        : null,
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryLight)
+                        : null,
+                    onTap: () {
+                      provider.updateLanguage(lang.code);
+                      Navigator.of(ctx).pop();
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showChangePinDialog(BuildContext context) {
+    final l10n = context.l10n;
     final currentPinCtrl = TextEditingController();
     final newPinCtrl = TextEditingController();
     final confirmPinCtrl = TextEditingController();
@@ -26,11 +92,11 @@ class SettingsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               side: const BorderSide(color: AppColors.border),
             ),
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.password_rounded, color: AppColors.primaryLight, size: 22),
-                SizedBox(width: 10),
-                Text('Modifica PIN Master', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Icon(Icons.password_rounded, color: AppColors.primaryLight, size: 22),
+                const SizedBox(width: 10),
+                Text(l10n.changePinDialogTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               ],
             ),
             content: SingleChildScrollView(
@@ -40,19 +106,19 @@ class SettingsScreen extends StatelessWidget {
                   TextField(
                     controller: currentPinCtrl,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'PIN Attuale'),
+                    decoration: InputDecoration(labelText: l10n.currentPinFieldLabel),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: newPinCtrl,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Nuovo PIN (min. 4 car.)'),
+                    decoration: InputDecoration(labelText: l10n.newPinFieldLabel),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: confirmPinCtrl,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Conferma Nuovo PIN'),
+                    decoration: InputDecoration(labelText: l10n.confirmNewPinFieldLabel),
                   ),
                   if (error != null) ...[
                     const SizedBox(height: 12),
@@ -75,7 +141,7 @@ class SettingsScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('Annulla'),
+                      child: Text(l10n.cancelButton),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -91,11 +157,11 @@ class SettingsScreen extends StatelessWidget {
                         final n2 = confirmPinCtrl.text.trim();
 
                         if (n1.length < 4) {
-                          setState(() => error = 'Il nuovo PIN deve avere almeno 4 caratteri');
+                          setState(() => error = l10n.pinMinCharsError);
                           return;
                         }
                         if (n1 != n2) {
-                          setState(() => error = 'I nuovi PIN non corrispondono');
+                          setState(() => error = l10n.newPinsDoNotMatchError);
                           return;
                         }
 
@@ -105,14 +171,14 @@ class SettingsScreen extends StatelessWidget {
                           if (context.mounted) {
                             Navigator.of(ctx).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('PIN Master aggiornato con successo')),
+                              SnackBar(content: Text(l10n.pinUpdatedSuccess)),
                             );
                           }
                         } else {
-                          setState(() => error = 'Il PIN attuale inserito non è corretto');
+                          setState(() => error = l10n.currentPinInvalid);
                         }
                       },
-                      child: const Text('Salva PIN'),
+                      child: Text(l10n.saveButton),
                     ),
                   ),
                 ],
@@ -125,6 +191,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showExportDialog(BuildContext context) {
+    final l10n = context.l10n;
     final pwdCtrl = TextEditingController();
     String? error;
 
@@ -138,26 +205,26 @@ class SettingsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               side: const BorderSide(color: AppColors.border),
             ),
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.cloud_upload_outlined, color: AppColors.successLight, size: 22),
-                SizedBox(width: 10),
-                Text('Esporta Backup', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Icon(Icons.cloud_upload_outlined, color: AppColors.successLight, size: 22),
+                const SizedBox(width: 10),
+                Text(l10n.exportBackupDialogTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Imposta una password per cifrare il file di backup. Sarà indispensabile per il ripristino.',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                Text(
+                  l10n.exportBackupInstructions,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: pwdCtrl,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Password del Backup'),
+                  decoration: InputDecoration(labelText: l10n.backupPasswordFieldLabel),
                 ),
                 if (error != null) ...[
                   const SizedBox(height: 10),
@@ -176,7 +243,7 @@ class SettingsScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('Annulla'),
+                      child: Text(l10n.cancelButton),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -189,7 +256,7 @@ class SettingsScreen extends StatelessWidget {
                       onPressed: () async {
                         final pwd = pwdCtrl.text.trim();
                         if (pwd.length < 6) {
-                          setState(() => error = 'La password deve avere almeno 6 caratteri');
+                          setState(() => error = l10n.backupPasswordMinCharsError);
                           return;
                         }
 
@@ -201,7 +268,7 @@ class SettingsScreen extends StatelessWidget {
                           _showBackupPayloadDialog(context, backupPayload);
                         }
                       },
-                      child: const Text('Genera'),
+                      child: Text(l10n.generateButton),
                     ),
                   ),
                 ],
@@ -214,6 +281,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showBackupPayloadDialog(BuildContext context, String payload) {
+    final l10n = context.l10n;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -222,20 +290,20 @@ class SettingsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: AppColors.border),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 22),
-            SizedBox(width: 10),
-            Text('Backup Generato', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 22),
+            const SizedBox(width: 10),
+            Text(l10n.backupGeneratedDialogTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Copia questa stringa crittografata e conservala in un luogo sicuro:',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+            Text(
+              l10n.backupCopyWarning,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
             ),
             const SizedBox(height: 12),
             Container(
@@ -266,7 +334,7 @@ class SettingsScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Chiudi'),
+                  child: Text(l10n.closeButton),
                 ),
               ),
               const SizedBox(width: 12),
@@ -280,11 +348,11 @@ class SettingsScreen extends StatelessWidget {
                     Clipboard.setData(ClipboardData(text: payload));
                     Navigator.of(ctx).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Backup copiato negli appunti')),
+                      SnackBar(content: Text(l10n.backupCopiedFeedback)),
                     );
                   },
                   icon: const Icon(Icons.copy_rounded, size: 16),
-                  label: const Text('Copia'),
+                  label: Text(l10n.copyButton),
                 ),
               ),
             ],
@@ -295,6 +363,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showImportDialog(BuildContext context) {
+    final l10n = context.l10n;
     final payloadCtrl = TextEditingController();
     final pwdCtrl = TextEditingController();
     String? error;
@@ -309,11 +378,11 @@ class SettingsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               side: const BorderSide(color: AppColors.border),
             ),
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.cloud_download_outlined, color: AppColors.info, size: 22),
-                SizedBox(width: 10),
-                Text('Ripristina da Backup', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Icon(Icons.cloud_download_outlined, color: AppColors.info, size: 22),
+                const SizedBox(width: 10),
+                Text(l10n.restoreBackupDialogTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               ],
             ),
             content: SingleChildScrollView(
@@ -324,8 +393,8 @@ class SettingsScreen extends StatelessWidget {
                   TextField(
                     controller: payloadCtrl,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Incolla Dati Backup',
+                    decoration: InputDecoration(
+                      labelText: l10n.pasteBackupDataLabel,
                       hintText: '{"caveau_backup": ...}',
                     ),
                   ),
@@ -333,7 +402,7 @@ class SettingsScreen extends StatelessWidget {
                   TextField(
                     controller: pwdCtrl,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Password del Backup'),
+                    decoration: InputDecoration(labelText: l10n.backupPasswordFieldLabel),
                   ),
                   if (error != null) ...[
                     const SizedBox(height: 10),
@@ -353,7 +422,7 @@ class SettingsScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('Annulla'),
+                      child: Text(l10n.cancelButton),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -368,7 +437,7 @@ class SettingsScreen extends StatelessWidget {
                         final pwd = pwdCtrl.text.trim();
 
                         if (payload.isEmpty || pwd.isEmpty) {
-                          setState(() => error = 'Compila tutti i campi');
+                          setState(() => error = l10n.fillAllFieldsError);
                           return;
                         }
 
@@ -378,14 +447,14 @@ class SettingsScreen extends StatelessWidget {
                           if (context.mounted) {
                             Navigator.of(ctx).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Ripristinati $count elementi con successo')),
+                              SnackBar(content: Text(l10n.itemsRestoredSuccess(count))),
                             );
                           }
                         } catch (e) {
-                          setState(() => error = 'Errore ripristino: password errata o dati non validi');
+                          setState(() => error = l10n.restoreFailedError);
                         }
                       },
-                      child: const Text('Ripristina'),
+                      child: Text(l10n.restoreButton),
                     ),
                   ),
                 ],
@@ -398,6 +467,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showWipeDialog(BuildContext context) {
+    final l10n = context.l10n;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -418,10 +488,10 @@ class SettingsScreen extends StatelessWidget {
               child: const Icon(Icons.delete_forever_rounded, color: AppColors.danger, size: 22),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Elimina tutti i dati?',
-                style: TextStyle(
+                l10n.wipeAllDataDialogTitle,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -430,22 +500,22 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Questa operazione cancellerà permanentemente tutte le password, credenziali, note e impostazioni salvate.',
-              style: TextStyle(
+              l10n.wipeAllDataWarning1,
+              style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 14,
                 height: 1.45,
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
-              'L\'azione è definitiva e non potrà essere annullata.',
-              style: TextStyle(
+              l10n.wipeAllDataWarning2,
+              style: const TextStyle(
                 color: AppColors.dangerLight,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -467,7 +537,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Annulla'),
+                  child: Text(l10n.cancelButton),
                 ),
               ),
               const SizedBox(width: 12),
@@ -488,7 +558,7 @@ class SettingsScreen extends StatelessWidget {
                     await vault.wipeAllData();
                     auth.lock();
                   },
-                  child: const Text('Elimina tutto'),
+                  child: Text(l10n.wipeAllDataConfirmButton),
                 ),
               ),
             ],
@@ -502,166 +572,204 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     final authProvider = context.watch<AuthProvider>();
+    final l10n = context.l10n;
     final settings = settingsProvider.settings;
+
+    final currentMeta = AppLocalizations.supportedLanguages.firstWhere(
+      (l) => l.code == settings.languageCode,
+      orElse: () => AppLocalizations.supportedLanguages.first,
+    );
 
     return SwipeBackWrapper(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Impostazioni di Sicurezza'),
+          title: Text(l10n.settingsTitle),
         ),
         body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            16,
-            20,
-            MediaQuery.of(context).padding.bottom + 36,
-          ),
-          children: [
-            // Security Section
-          _buildSectionHeader('AUTENTICAZIONE & ACCESSO'),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              MediaQuery.of(context).padding.bottom + 36,
             ),
-            child: Column(
-              children: [
-                if (authProvider.isBiometricSupported) ...[
-                  SwitchListTile(
-                    title: const Text('Sblocco Biometrico',
-                        style: TextStyle(fontWeight: FontWeight.w500)),
-                    subtitle: const Text('Richiedi face ID o impronta digitale per sbloccare il caveau',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    value: settings.biometricsEnabled,
-                    activeThumbColor: AppColors.primary,
-                    onChanged: (val) => settingsProvider.updateBiometrics(val),
-                  ),
-                  const Divider(color: AppColors.border),
-                ],
-                ListTile(
-                  leading: const Icon(Icons.password_rounded, color: AppColors.primaryLight),
-                  title: const Text('Modifica PIN Master',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: const Text('Cambia il codice di emergenza e sblocco',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-                  onTap: () => _showChangePinDialog(context),
+            children: [
+              // Security Section
+              _buildSectionHeader(l10n.sectionAuthAccess),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
                 ),
-                const Divider(color: AppColors.border),
-                ListTile(
-                  leading: const Icon(Icons.timer_outlined, color: AppColors.primaryLight),
-                  title: const Text('Blocco Automatico',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: Text(
-                    _formatAutoLockLabel(settings.autoLockSeconds),
-                    style: const TextStyle(color: AppColors.primaryLight, fontSize: 12),
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-                  onTap: () => _showAutoLockPicker(context, settingsProvider),
+                child: Column(
+                  children: [
+                    if (authProvider.isBiometricSupported) ...[
+                      SwitchListTile(
+                        title: Text(l10n.biometricUnlockTileTitle,
+                            style: const TextStyle(fontWeight: FontWeight.w500)),
+                        subtitle: Text(l10n.biometricUnlockTileSubtitle,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        value: settings.biometricsEnabled,
+                        activeThumbColor: AppColors.primary,
+                        onChanged: (val) => settingsProvider.updateBiometrics(val),
+                      ),
+                      const Divider(color: AppColors.border),
+                    ],
+                    ListTile(
+                      leading: const Icon(Icons.password_rounded, color: AppColors.primaryLight),
+                      title: Text(l10n.changeMasterPinTileTitle,
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(l10n.changeMasterPinTileSubtitle,
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                      onTap: () => _showChangePinDialog(context),
+                    ),
+                    const Divider(color: AppColors.border),
+                    ListTile(
+                      leading: const Icon(Icons.timer_outlined, color: AppColors.primaryLight),
+                      title: Text(l10n.autoLockTileTitle,
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(
+                        l10n.formatAutoLock(settings.autoLockSeconds),
+                        style: const TextStyle(color: AppColors.primaryLight, fontSize: 12),
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                      onTap: () => _showAutoLockPicker(context, settingsProvider),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 24),
 
-          // Privacy Section
-          _buildSectionHeader('PRIVACY & APPUNTI'),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              children: [
-                SwitchListTile(
-                  title: const Text('Privacy Shield',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: const Text(
-                    'Sfoca e nasconde l\'anteprima dell\'app nel selettore app',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                  ),
-                  value: settings.privacyScreenEnabled,
-                  activeThumbColor: AppColors.primary,
-                  onChanged: (val) => settingsProvider.updatePrivacyScreen(val),
+              // Privacy Section
+              _buildSectionHeader(l10n.sectionPrivacyClipboard),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
                 ),
-                const Divider(color: AppColors.border),
-                ListTile(
-                  leading: const Icon(Icons.content_cut_rounded, color: AppColors.primaryLight),
-                  title: const Text('Svuota Appunti',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: Text(
-                    _formatClipboardLabel(settings.clipboardClearSeconds),
-                    style: const TextStyle(color: AppColors.primaryLight, fontSize: 12),
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-                  onTap: () => _showClipboardPicker(context, settingsProvider),
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: Text(l10n.privacyShieldTileTitle,
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(
+                        l10n.privacyShieldTileSubtitle,
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                      value: settings.privacyScreenEnabled,
+                      activeThumbColor: AppColors.primary,
+                      onChanged: (val) => settingsProvider.updatePrivacyScreen(val),
+                    ),
+                    const Divider(color: AppColors.border),
+                    ListTile(
+                      leading: const Icon(Icons.content_cut_rounded, color: AppColors.primaryLight),
+                      title: Text(l10n.clearClipboardTileTitle,
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(
+                        l10n.formatClipboard(settings.clipboardClearSeconds),
+                        style: const TextStyle(color: AppColors.primaryLight, fontSize: 12),
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                      onTap: () => _showClipboardPicker(context, settingsProvider),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 24),
 
-          // Backup Section
-          _buildSectionHeader('BACKUP & RIPRISTINO'),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.cloud_upload_outlined, color: AppColors.successLight),
-                  title: const Text('Esporta Backup Cifrato',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: const Text('Salva una copia protetta da password',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-                  onTap: () => _showExportDialog(context),
+              // Backup Section
+              _buildSectionHeader(l10n.sectionBackupRestore),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
                 ),
-                const Divider(color: AppColors.border),
-                ListTile(
-                  leading: const Icon(Icons.cloud_download_outlined, color: AppColors.info),
-                  title: const Text('Ripristina da Backup',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: const Text('Importa le tue credenziali cifrate',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-                  onTap: () => _showImportDialog(context),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.cloud_upload_outlined, color: AppColors.successLight),
+                      title: Text(l10n.exportBackupTileTitle,
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(l10n.exportBackupTileSubtitle,
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                      onTap: () => _showExportDialog(context),
+                    ),
+                    const Divider(color: AppColors.border),
+                    ListTile(
+                      leading: const Icon(Icons.cloud_download_outlined, color: AppColors.info),
+                      title: Text(l10n.restoreBackupTileTitle,
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(l10n.restoreBackupTileSubtitle,
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                      onTap: () => _showImportDialog(context),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 24),
 
-          // Danger Zone
-          _buildSectionHeader('ZONA DI PERICOLO'),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-            ),
-            child: ListTile(
-              leading: const Icon(Icons.delete_forever_rounded, color: AppColors.danger),
-              title: const Text('Cancella e Azzera Caveau',
-                  style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600)),
-              subtitle: const Text('Rimuove tutti gli elementi e resetta le chiavi',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-              onTap: () => _showWipeDialog(context),
-            ),
+              // Language Section
+              _buildSectionHeader(l10n.sectionLanguage),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: ListTile(
+                  leading: Text(currentMeta.flag, style: const TextStyle(fontSize: 22)),
+                  title: Text(l10n.languageOptionLabel, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  subtitle: Text(l10n.languageOptionSubtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        currentMeta.nativeName,
+                        style: const TextStyle(
+                          color: AppColors.primaryLight,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                    ],
+                  ),
+                  onTap: () => _showLanguagePicker(context, settingsProvider),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Danger Zone
+              _buildSectionHeader(l10n.sectionDangerZone),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+                ),
+                child: ListTile(
+                  leading: const Icon(Icons.delete_forever_rounded, color: AppColors.danger),
+                  title: Text(l10n.wipeAllDataTileTitle,
+                      style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600)),
+                  subtitle: Text(l10n.wipeAllDataTileSubtitle,
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  onTap: () => _showWipeDialog(context),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
           ),
-          const SizedBox(height: 32),
-        ],
+        ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -678,20 +786,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  String _formatAutoLockLabel(int seconds) {
-    if (seconds == 0) return 'Immediatamente all\'uscita';
-    if (seconds == 30) return 'Dopo 30 secondi in background';
-    if (seconds == 60) return 'Dopo 1 minuto';
-    if (seconds == 300) return 'Dopo 5 minuti';
-    return '$seconds secondi';
-  }
-
-  String _formatClipboardLabel(int seconds) {
-    if (seconds == 0) return 'Disabilitato';
-    return 'Dopo $seconds secondi';
-  }
-
   void _showAutoLockPicker(BuildContext context, SettingsProvider provider) {
+    final l10n = context.l10n;
     showModalBottomSheet(
       context: context,
       useSafeArea: true,
@@ -711,24 +807,24 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('Timeout Blocco Automatico',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(l10n.autoLockPickerTitle,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
-                _buildOptionTile(ctx, 'Immediato', 0, provider.settings.autoLockSeconds, (v) {
+                _buildOptionTile(ctx, l10n.autoLockImmediate, 0, provider.settings.autoLockSeconds, (v) {
                   provider.updateAutoLock(v);
                   Navigator.of(ctx).pop();
                 }),
-                _buildOptionTile(ctx, '30 secondi', 30, provider.settings.autoLockSeconds, (v) {
+                _buildOptionTile(ctx, l10n.autoLock30s, 30, provider.settings.autoLockSeconds, (v) {
                   provider.updateAutoLock(v);
                   Navigator.of(ctx).pop();
                 }),
-                _buildOptionTile(ctx, '1 minuto', 60, provider.settings.autoLockSeconds, (v) {
+                _buildOptionTile(ctx, l10n.autoLock1m, 60, provider.settings.autoLockSeconds, (v) {
                   provider.updateAutoLock(v);
                   Navigator.of(ctx).pop();
                 }),
-                _buildOptionTile(ctx, '5 minuti', 300, provider.settings.autoLockSeconds, (v) {
+                _buildOptionTile(ctx, l10n.autoLock5m, 300, provider.settings.autoLockSeconds, (v) {
                   provider.updateAutoLock(v);
                   Navigator.of(ctx).pop();
                 }),
@@ -741,6 +837,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showClipboardPicker(BuildContext context, SettingsProvider provider) {
+    final l10n = context.l10n;
     showModalBottomSheet(
       context: context,
       useSafeArea: true,
@@ -760,24 +857,24 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('Pulizia Automatica Appunti',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(l10n.clipboardPickerTitle,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
-                _buildOptionTile(ctx, 'Disabilitato', 0, provider.settings.clipboardClearSeconds, (v) {
+                _buildOptionTile(ctx, l10n.clipboardDisabled, 0, provider.settings.clipboardClearSeconds, (v) {
                   provider.updateClipboardClear(v);
                   Navigator.of(ctx).pop();
                 }),
-                _buildOptionTile(ctx, '15 secondi', 15, provider.settings.clipboardClearSeconds, (v) {
+                _buildOptionTile(ctx, l10n.clipboard15s, 15, provider.settings.clipboardClearSeconds, (v) {
                   provider.updateClipboardClear(v);
                   Navigator.of(ctx).pop();
                 }),
-                _buildOptionTile(ctx, '30 secondi (Consigliato)', 30, provider.settings.clipboardClearSeconds, (v) {
+                _buildOptionTile(ctx, l10n.clipboard30sRecommended, 30, provider.settings.clipboardClearSeconds, (v) {
                   provider.updateClipboardClear(v);
                   Navigator.of(ctx).pop();
                 }),
-                _buildOptionTile(ctx, '60 secondi', 60, provider.settings.clipboardClearSeconds, (v) {
+                _buildOptionTile(ctx, l10n.clipboard60s, 60, provider.settings.clipboardClearSeconds, (v) {
                   provider.updateClipboardClear(v);
                   Navigator.of(ctx).pop();
                 }),

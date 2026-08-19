@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_brand_terms.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../models/vault_item.dart';
 import '../../providers/vault_provider.dart';
 import '../generator/password_generator_screen.dart';
@@ -153,6 +155,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
   }
 
   void _addCustomField() {
+    final l10n = context.l10n;
     showDialog(
       context: context,
       builder: (ctx) {
@@ -168,11 +171,11 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                 borderRadius: BorderRadius.circular(20),
                 side: const BorderSide(color: AppColors.border),
               ),
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryLight, size: 22),
-                  SizedBox(width: 10),
-                  Text('Campo Personalizzato', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryLight, size: 22),
+                  const SizedBox(width: 10),
+                  Text(l10n.addCustomFieldButton, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 ],
               ),
               content: Column(
@@ -180,12 +183,12 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                 children: [
                   TextField(
                     controller: labelCtrl,
-                    decoration: const InputDecoration(labelText: 'Etichetta (es. Domanda segreta)'),
+                    decoration: InputDecoration(labelText: l10n.fieldNameLabel),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: valueCtrl,
-                    decoration: const InputDecoration(labelText: 'Valore'),
+                    decoration: InputDecoration(labelText: l10n.fieldValueLabel),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -195,8 +198,8 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                         activeColor: AppColors.primary,
                         onChanged: (v) => setDialogState(() => isSecret = v ?? false),
                       ),
-                      const Expanded(
-                        child: Text('Nascondi valore (Dato segreto)', style: TextStyle(fontSize: 13)),
+                      Expanded(
+                        child: Text(l10n.secretFieldCheckbox, style: const TextStyle(fontSize: 13)),
                       ),
                     ],
                   ),
@@ -213,7 +216,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: () => Navigator.of(ctx).pop(),
-                        child: const Text('Annulla'),
+                        child: Text(l10n.cancelButton),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -237,7 +240,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                             Navigator.of(ctx).pop();
                           }
                         },
-                        child: const Text('Aggiungi'),
+                        child: Text(l10n.addItemButton),
                       ),
                     ),
                   ],
@@ -252,11 +255,12 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isEditing = widget.initialItem != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Modifica Elemento' : 'Nuovo Elemento'),
+        title: Text(isEditing ? l10n.editItemTitle : l10n.newItemTitle),
         actions: [
           IconButton(
             icon: Icon(
@@ -293,7 +297,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
-                        label: Text(cat.displayName),
+                        label: Text(l10n.categoryDisplayName(cat)),
                         selected: isSelected,
                         selectedColor: AppColors.primary.withValues(alpha: 0.25),
                         onSelected: (selected) {
@@ -309,11 +313,11 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
               TextFormField(
                 controller: _titleController,
                 validator: (val) =>
-                    val == null || val.trim().isEmpty ? 'Inserisci un titolo' : null,
-                decoration: const InputDecoration(
-                  labelText: 'Titolo *',
-                  hintText: 'Es. Google, Netflix, Carta Principale',
-                  prefixIcon: Icon(Icons.label_outline_rounded),
+                    val == null || val.trim().isEmpty ? l10n.titleRequiredValidation : null,
+                decoration: InputDecoration(
+                  labelText: '${l10n.titleLabel} *',
+                  hintText: 'Google, Netflix, Revolut...',
+                  prefixIcon: const Icon(Icons.label_outline_rounded),
                 ),
               ),
               const SizedBox(height: 16),
@@ -322,9 +326,9 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
               if (_category == VaultCategory.login) ...[
                 TextFormField(
                   controller: _usernameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome Utente / Email',
-                    prefixIcon: Icon(Icons.person_outline_rounded),
+                  decoration: InputDecoration(
+                    labelText: l10n.usernameLabel,
+                    prefixIcon: const Icon(Icons.person_outline_rounded),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -333,7 +337,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                   obscureText: _obscurePassword,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: l10n.passwordLabel,
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -350,7 +354,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                         IconButton(
                           icon: const Icon(Icons.auto_fix_high_rounded,
                               color: AppColors.primaryLight),
-                          tooltip: 'Genera password',
+                          tooltip: l10n.passwordGeneratorTooltip,
                           onPressed: _openGenerator,
                         ),
                       ],
@@ -362,27 +366,27 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                 TextFormField(
                   controller: _websiteController,
                   keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(
-                    labelText: 'Sito Web / URL',
-                    prefixIcon: Icon(Icons.link_rounded),
+                  decoration: InputDecoration(
+                    labelText: l10n.websiteLabel,
+                    prefixIcon: const Icon(Icons.link_rounded),
                   ),
                 ),
               ] else if (_category == VaultCategory.card) ...[
                 TextFormField(
                   controller: _cardHolderController,
-                  decoration: const InputDecoration(
-                    labelText: 'Intestatario Carta',
-                    prefixIcon: Icon(Icons.person_outline_rounded),
+                  decoration: InputDecoration(
+                    labelText: l10n.cardHolderLabel,
+                    prefixIcon: const Icon(Icons.person_outline_rounded),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _cardNumberController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Numero Carta',
+                  decoration: InputDecoration(
+                    labelText: l10n.cardNumberLabel,
                     hintText: '1234 5678 9012 3456',
-                    prefixIcon: Icon(Icons.credit_card_rounded),
+                    prefixIcon: const Icon(Icons.credit_card_rounded),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -391,10 +395,10 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _cardExpiryController,
-                        decoration: const InputDecoration(
-                          labelText: 'Scadenza',
-                          hintText: 'MM/AA',
-                          prefixIcon: Icon(Icons.calendar_today_rounded),
+                        decoration: InputDecoration(
+                          labelText: l10n.cardExpiryLabel,
+                          hintText: 'MM/YY',
+                          prefixIcon: const Icon(Icons.calendar_today_rounded),
                         ),
                       ),
                     ),
@@ -405,7 +409,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                         obscureText: _obscureCvv,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'CVV / CVC',
+                          labelText: l10n.cardCvvLabel,
                           prefixIcon: const Icon(Icons.security_rounded),
                           suffixIcon: IconButton(
                             icon: Icon(_obscureCvv
@@ -425,7 +429,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                   obscureText: _obscureCardPin,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'PIN della Carta',
+                    labelText: l10n.cardPinLabel,
                     prefixIcon: const Icon(Icons.pin_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(_obscureCardPin
@@ -440,35 +444,35 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
+                  decoration: InputDecoration(
+                    labelText: l10n.emailLabel,
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefono',
-                    prefixIcon: Icon(Icons.phone_outlined),
+                  decoration: InputDecoration(
+                    labelText: l10n.phoneLabel,
+                    prefixIcon: const Icon(Icons.phone_outlined),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _idNumberController,
-                  decoration: const InputDecoration(
-                    labelText: 'Codice Fiscale / Numero Documento',
-                    prefixIcon: Icon(Icons.badge_outlined),
+                  decoration: InputDecoration(
+                    labelText: l10n.idNumberLabel,
+                    prefixIcon: const Icon(Icons.badge_outlined),
                   ),
                 ),
               ] else if (_category == VaultCategory.note) ...[
                 TextFormField(
                   controller: _notesController,
                   maxLines: 8,
-                  decoration: const InputDecoration(
-                    labelText: 'Contenuto della Nota',
-                    hintText: 'Scrivi qui le tue note crittografate, chiavi di ripristino o testi riservati...',
+                  decoration: InputDecoration(
+                    labelText: l10n.notesLabel,
+                    hintText: '...',
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -477,7 +481,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                   controller: _apiKeySecretController,
                   obscureText: _obscureApiSecret,
                   decoration: InputDecoration(
-                    labelText: 'API Secret / Token',
+                    labelText: l10n.apiKeySecretLabel,
                     prefixIcon: const Icon(Icons.vpn_key_outlined),
                     suffixIcon: IconButton(
                       icon: Icon(_obscureApiSecret
@@ -496,9 +500,8 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                 TextFormField(
                   controller: _notesController,
                   maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Note Aggiuntive (opzionale)',
-                    hintText: 'Note o promemoria...',
+                  decoration: InputDecoration(
+                    labelText: '${l10n.notesLabel} (${l10n.optionalLabel})',
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -507,9 +510,9 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
               // Custom Fields List
               if (_customFields.isNotEmpty) ...[
                 const SizedBox(height: 24),
-                const Text(
-                  'Campi Personalizzati',
-                  style: TextStyle(
+                Text(
+                  l10n.customFieldsSection,
+                  style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -567,13 +570,13 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
               OutlinedButton.icon(
                 onPressed: _addCustomField,
                 icon: const Icon(Icons.add_rounded),
-                label: const Text('Aggiungi Campo Personalizzato'),
+                label: Text(l10n.addCustomFieldButton),
               ),
 
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _save,
-                child: Text(isEditing ? 'Salva Modifiche' : 'Salva nel Caveau'),
+                child: Text(l10n.saveButton),
               ),
             ],
           ),

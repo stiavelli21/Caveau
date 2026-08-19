@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../models/vault_item.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -40,6 +41,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
   }
 
   void _showAddCategoryPicker(BuildContext context) {
+    final l10n = context.l10n;
     showModalBottomSheet(
       context: context,
       useSafeArea: true,
@@ -76,9 +78,9 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Cosa desideri salvare?',
-                      style: TextStyle(
+                    Text(
+                      l10n.whatToSaveTitle,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -90,40 +92,40 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
               const SizedBox(height: 8),
               _buildCategoryAddTile(
                 ctx,
-                'Password & Account',
-                'Credenziali per siti web, app o servizi',
+                l10n.categoryDisplayName(VaultCategory.login),
+                l10n.categoryDescription(VaultCategory.login),
                 Icons.vpn_key_rounded,
                 AppColors.primary,
                 VaultCategory.login,
               ),
               _buildCategoryAddTile(
                 ctx,
-                'Carta di Pagamento',
-                'Carte di credito, debito, CVV e PIN',
+                l10n.categoryDisplayName(VaultCategory.card),
+                l10n.categoryDescription(VaultCategory.card),
                 Icons.credit_card_rounded,
                 AppColors.success,
                 VaultCategory.card,
               ),
               _buildCategoryAddTile(
                 ctx,
-                'Nota Sicura',
-                'Testi, PIN o appunti crittografati',
+                l10n.categoryDisplayName(VaultCategory.note),
+                l10n.categoryDescription(VaultCategory.note),
                 Icons.description_rounded,
                 AppColors.warning,
                 VaultCategory.note,
               ),
               _buildCategoryAddTile(
                 ctx,
-                'Dati Identità',
-                'Documenti, codici fiscali, passaporti',
+                l10n.categoryDisplayName(VaultCategory.identity),
+                l10n.categoryDescription(VaultCategory.identity),
                 Icons.badge_rounded,
                 AppColors.info,
                 VaultCategory.identity,
               ),
               _buildCategoryAddTile(
                 ctx,
-                'Chiave API / Token',
-                'Token di accesso e segreti sviluppatore',
+                l10n.categoryDisplayName(VaultCategory.apiKey),
+                l10n.categoryDescription(VaultCategory.apiKey),
                 Icons.terminal_rounded,
                 AppColors.dangerLight,
                 VaultCategory.apiKey,
@@ -170,6 +172,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
     final vaultProvider = context.watch<VaultProvider>();
     final settingsProvider = context.watch<SettingsProvider>();
     final authProvider = context.watch<AuthProvider>();
+    final l10n = context.l10n;
     final filteredItems = vaultProvider.filteredItems;
 
     return Scaffold(
@@ -178,13 +181,13 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           children: [
             const VaultLogo(size: 28),
             const SizedBox(width: 10),
-            const Text('Caveau'),
+            Text(l10n.appName),
           ],
         ),
         actions: [
           // Security Audit Icon with badge
           IconButton(
-            tooltip: 'Security Audit',
+            tooltip: l10n.securityAuditTooltip,
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -215,7 +218,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           ),
           // Password Generator Tool
           IconButton(
-            tooltip: 'Generatore Password',
+            tooltip: l10n.passwordGeneratorTooltip,
             icon: const Icon(Icons.auto_fix_high_rounded),
             onPressed: () {
               Navigator.of(context).push(
@@ -227,7 +230,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           ),
           // Settings
           IconButton(
-            tooltip: 'Impostazioni',
+            tooltip: l10n.settingsTooltip,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
               Navigator.of(context).push(
@@ -239,7 +242,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           ),
           // Lock Vault Button
           IconButton(
-            tooltip: 'Blocca Ora',
+            tooltip: l10n.lockNowTooltip,
             icon: const Icon(Icons.lock_outline_rounded, color: AppColors.dangerLight),
             onPressed: () {
               authProvider.lock();
@@ -257,7 +260,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                 controller: _searchController,
                 onChanged: (val) => vaultProvider.setSearchQuery(val),
                 decoration: InputDecoration(
-                  hintText: 'Cerca per titolo, username, note...',
+                  hintText: l10n.searchHint,
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -280,7 +283,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
               child: Row(
                 children: [
                   FilterChip(
-                    label: const Text('Tutti'),
+                    label: Text(l10n.allCategoryFilter),
                     selected: vaultProvider.selectedCategory == null &&
                         !vaultProvider.favoritesOnly,
                     onSelected: (_) {
@@ -303,7 +306,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                               : AppColors.textSecondary,
                         ),
                         const SizedBox(width: 4),
-                        const Text('Preferiti'),
+                        Text(l10n.favoritesFilter),
                       ],
                     ),
                     selected: vaultProvider.favoritesOnly,
@@ -316,7 +319,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
-                        label: Text(cat.shortName),
+                        label: Text(l10n.categoryShortName(cat)),
                         selected: isSelected,
                         onSelected: (_) {
                           if (vaultProvider.favoritesOnly) {
@@ -366,8 +369,8 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                                 const SizedBox(height: 16),
                                 Text(
                                   vaultProvider.items.isEmpty
-                                      ? 'Il tuo Caveau è vuoto'
-                                      : 'Nessun elemento corrispondente',
+                                      ? l10n.emptyVaultTitle
+                                      : l10n.noSearchResultsTitle,
                                   style: const TextStyle(
                                     color: AppColors.textPrimary,
                                     fontSize: 17,
@@ -377,8 +380,8 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                                 const SizedBox(height: 6),
                                 Text(
                                   vaultProvider.items.isEmpty
-                                      ? 'Salva le tue password, carte e note in sicurezza'
-                                      : 'Prova a modificare i filtri di ricerca',
+                                      ? l10n.emptyVaultSubtitle
+                                      : l10n.noSearchResultsSubtitle,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: AppColors.textSecondary,
@@ -390,7 +393,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                                   ElevatedButton.icon(
                                     onPressed: () => _showAddCategoryPicker(context),
                                     icon: const Icon(Icons.add_rounded),
-                                    label: const Text('Aggiungi Elemento'),
+                                    label: Text(l10n.addItemButton),
                                   ),
                                 ],
                               ],
@@ -431,7 +434,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddCategoryPicker(context),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Nuovo Elemento'),
+        label: Text(l10n.newItemFab),
       ),
     );
   }

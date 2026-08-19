@@ -9,12 +9,21 @@ enum AuthStatus {
   authenticated,
 }
 
+enum AuthErrorType {
+  biometricsDisabled,
+  biometricsFailedOrCanceled,
+  pinIncorrect,
+  lockedOut,
+  currentPinInvalid,
+}
+
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
   final SecureStorageService _storageService;
 
   AuthStatus _status = AuthStatus.initial;
   bool _isBiometricSupported = false;
+  AuthErrorType? _errorType;
   String? _errorMessage;
   int _failedAttempts = 0;
   DateTime? _lockoutUntil;
@@ -27,6 +36,7 @@ class AuthProvider extends ChangeNotifier {
 
   AuthStatus get status => _status;
   bool get isBiometricSupported => _isBiometricSupported;
+  AuthErrorType? get errorType => _errorType;
   String? get errorMessage => _errorMessage;
   int get failedAttempts => _failedAttempts;
   bool get isLockedOut =>
@@ -35,6 +45,22 @@ class AuthProvider extends ChangeNotifier {
     if (_lockoutUntil == null) return 0;
     final diff = _lockoutUntil!.difference(DateTime.now()).inSeconds;
     return diff > 0 ? diff : 0;
+  }
+
+  String? getLocalizedErrorMessage(dynamic l10n) {
+    if (_errorType == null) return _errorMessage;
+    switch (_errorType!) {
+      case AuthErrorType.biometricsDisabled:
+        return l10n.biometricDisabledInSettings;
+      case AuthErrorType.biometricsFailedOrCanceled:
+        return l10n.biometricFailedOrCanceled;
+      case AuthErrorType.lockedOut:
+        return l10n.lockoutTimeRemaining(lockoutSecondsRemaining);
+      case AuthErrorType.pinIncorrect:
+        return l10n.pinAttemptsRemaining(5 - _failedAttempts);
+      case AuthErrorType.currentPinInvalid:
+        return l10n.currentPinInvalid;
+    }
   }
 
   Future<void> checkInitialState() async {
@@ -55,9 +81,11 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> authenticateWithBiometrics({bool silentFail = true}) async {
     _errorMessage = null;
+    _errorType = null;
     final settings = await _storageService.getSecuritySettings();
     if (!settings.biometricsEnabled) {
       if (!silentFail) {
+        _errorType = AuthErrorType.biometricsDisabled;
         _errorMessage = 'Autenticazione biometrica disabilitata nelle impostazioni';
       }
       notifyListeners();
@@ -68,11 +96,13 @@ class AuthProvider extends ChangeNotifier {
     if (success) {
       _status = AuthStatus.authenticated;
       _errorMessage = null;
+      _errorType = null;
       _failedAttempts = 0;
       notifyListeners();
       return true;
     } else {
       if (!silentFail) {
+        _errorType = AuthErrorType.biometricsFailedOrCanceled;
         _errorMessage = 'Autenticazione biometrica non riuscita o annullata';
       }
       notifyListeners();
@@ -82,6 +112,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> authenticateWithPin(String pin) async {
     _errorMessage = null;
+    _errorType = null;
     final success = await _authService.verifyMasterPin(pin);
 
     final settings = await _storageService.getSecuritySettings();
@@ -91,13 +122,16 @@ class AuthProvider extends ChangeNotifier {
     if (success) {
       _status = AuthStatus.authenticated;
       _errorMessage = null;
+      _errorType = null;
       notifyListeners();
       return true;
     } else {
       if (isLockedOut) {
+        _errorType = AuthErrorType.lockedOut;
         _errorMessage =
             'Troppi tentativi falliti. Riprova tra $lockoutSecondsRemaining secondi.';
       } else {
+        _errorType = AuthErrorType.pinIncorrect;
         _errorMessage = 'PIN Master non corretto (${5 - _failedAttempts} tentativi rimasti)';
       }
       notifyListeners();
@@ -109,6 +143,7 @@ class AuthProvider extends ChangeNotifier {
     await _authService.setupMasterPin(pin);
     _status = AuthStatus.authenticated;
     _errorMessage = null;
+    _errorType = null;
     notifyListeners();
   }
 
@@ -117,11 +152,13 @@ class AuthProvider extends ChangeNotifier {
     required String newPin,
   }) async {
     _errorMessage = null;
+    _errorType = null;
     final success = await _authService.changeMasterPin(
       currentPin: currentPin,
       newPin: newPin,
     );
     if (!success) {
+      _errorType = AuthErrorType.currentPinInvalid;
       _errorMessage = 'PIN Master attuale non valido';
       notifyListeners();
       return false;
@@ -133,6 +170,7 @@ class AuthProvider extends ChangeNotifier {
   void lock() {
     _status = AuthStatus.locked;
     _errorMessage = null;
+    _errorType = null;
     notifyListeners();
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:caveau/core/constants/app_brand_terms.dart';
+import 'package:caveau/core/localization/app_localizations.dart';
 import 'package:caveau/core/utils/password_generator.dart';
 import 'package:caveau/core/services/auth_service.dart';
 import 'package:caveau/models/vault_item.dart';
@@ -88,21 +90,23 @@ void main() {
   });
 
   group('SecuritySettings Tests', () {
-    test('default settings have autoLockSeconds set to 30 seconds', () {
+    test('default settings have autoLockSeconds set to 30 seconds and languageCode it', () {
       const settings = SecuritySettings();
       expect(settings.autoLockSeconds, equals(30));
       expect(settings.biometricsEnabled, isTrue);
       expect(settings.privacyScreenEnabled, isTrue);
       expect(settings.clipboardClearSeconds, equals(30));
+      expect(settings.languageCode, equals('it'));
     });
 
-    test('serializes and deserializes security settings', () {
+    test('serializes and deserializes security settings with custom language', () {
       const settings = SecuritySettings(
         biometricsEnabled: false,
         autoLockSeconds: 60,
         privacyScreenEnabled: true,
         clipboardClearSeconds: 15,
         failedAttempts: 2,
+        languageCode: 'en',
       );
 
       final jsonStr = settings.serialize();
@@ -113,6 +117,7 @@ void main() {
       expect(restored.privacyScreenEnabled, isTrue);
       expect(restored.clipboardClearSeconds, equals(15));
       expect(restored.failedAttempts, equals(2));
+      expect(restored.languageCode, equals('en'));
     });
   });
 
@@ -135,6 +140,89 @@ void main() {
 
       expect(hash1, equals(hash2));
       expect(hash1, isNot(equals(hashDifferentPin)));
+    });
+  });
+
+  group('Localization & Brand Terms Tests', () {
+    test('immutable brand and universal terms constants remain constant', () {
+      expect(AppBrandTerms.appName, equals('Caveau'));
+      expect(AppBrandTerms.password, equals('Password'));
+      expect(AppBrandTerms.pin, equals('PIN'));
+      expect(AppBrandTerms.masterPin, equals('Master PIN'));
+      expect(AppBrandTerms.pinMaster, equals('PIN Master'));
+      expect(AppBrandTerms.sha256, equals('SHA-256'));
+      expect(AppBrandTerms.aes256, equals('AES-256'));
+      expect(AppBrandTerms.faceId, equals('Face ID'));
+      expect(AppBrandTerms.touchId, equals('Touch ID'));
+      expect(AppBrandTerms.apiKey, equals('API Key'));
+      expect(AppBrandTerms.androidKeystore, equals('Android Keystore'));
+      expect(AppBrandTerms.iosKeychain, equals('iOS Keychain'));
+    });
+
+    test('AppLocalizationsIt has correct Italian translations and uses brand terms', () {
+      final it = AppLocalizationsIt();
+      expect(it.languageCode, equals('it'));
+      expect(it.appName, equals('Caveau'));
+      expect(it.unlockVaultButton, equals('Sblocca Cassaforte'));
+      expect(it.vaultProtectedTitle, contains('Caveau'));
+      expect(it.enterMasterPinPrompt, contains('PIN Master'));
+      expect(it.settingsTitle, equals('Impostazioni di Sicurezza'));
+      expect(it.languageOptionLabel, equals('Lingua'));
+      expect(it.categoryDisplayName(VaultCategory.login), contains('Password'));
+    });
+
+    test('AppLocalizationsEn has correct English translations and uses brand terms', () {
+      final en = AppLocalizationsEn();
+      expect(en.languageCode, equals('en'));
+      expect(en.appName, equals('Caveau'));
+      expect(en.unlockVaultButton, equals('Unlock Vault'));
+      expect(en.vaultProtectedTitle, contains('Caveau'));
+      expect(en.enterMasterPinPrompt, contains('Master PIN'));
+      expect(en.settingsTitle, equals('Security Settings'));
+      expect(en.languageOptionLabel, equals('Language'));
+      expect(en.categoryDisplayName(VaultCategory.login), contains('Password'));
+    });
+
+    test('AppLocalizationsEs has correct Spanish translations and uses brand terms', () {
+      final es = AppLocalizationsEs();
+      expect(es.languageCode, equals('es'));
+      expect(es.appName, equals('Caveau'));
+      expect(es.unlockVaultButton, equals('Desbloquear Bóveda'));
+      expect(es.vaultProtectedTitle, contains('Caveau'));
+      expect(es.enterMasterPinPrompt, contains('Master PIN'));
+      expect(es.settingsTitle, equals('Ajustes de Seguridad'));
+      expect(es.languageOptionLabel, equals('Idioma'));
+      expect(es.categoryDisplayName(VaultCategory.login), contains('Contraseñas'));
+    });
+
+    test('AppLocalizationsFr has correct French translations and uses brand terms', () {
+      final fr = AppLocalizationsFr();
+      expect(fr.languageCode, equals('fr'));
+      expect(fr.appName, equals('Caveau'));
+      expect(fr.unlockVaultButton, equals('Déverrouiller le Coffre'));
+      expect(fr.vaultProtectedTitle, contains('Caveau'));
+      expect(fr.enterMasterPinPrompt, contains('Master PIN'));
+      expect(fr.settingsTitle, equals('Paramètres de Sécurité'));
+      expect(fr.languageOptionLabel, equals('Langue'));
+      expect(fr.categoryDisplayName(VaultCategory.login), contains('Mots de Passe'));
+    });
+
+    test('AppLocalizationsDe has correct German translations and uses brand terms', () {
+      final de = AppLocalizationsDe();
+      expect(de.languageCode, equals('de'));
+      expect(de.appName, equals('Caveau'));
+      expect(de.unlockVaultButton, equals('Tresor Entsperren'));
+      expect(de.vaultProtectedTitle, contains('Caveau'));
+      expect(de.enterMasterPinPrompt, contains('Master PIN'));
+      expect(de.settingsTitle, equals('Sicherheitseinstellungen'));
+      expect(de.languageOptionLabel, equals('Sprache'));
+      expect(de.categoryDisplayName(VaultCategory.login), contains('Passwörter'));
+    });
+
+    test('supportedLanguages metadata list has all 5 languages configured', () {
+      expect(AppLocalizations.supportedLanguages.length, equals(5));
+      final codes = AppLocalizations.supportedLanguages.map((l) => l.code).toList();
+      expect(codes, containsAll(['it', 'en', 'es', 'fr', 'de']));
     });
   });
 }

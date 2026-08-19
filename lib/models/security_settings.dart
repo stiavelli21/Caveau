@@ -7,6 +7,7 @@ class SecuritySettings {
   final int clipboardClearSeconds; // 0 = mai, 15, 30, 60
   final int failedAttempts;
   final DateTime? lockoutUntil;
+  final String languageCode; // 'it', 'en'
 
   const SecuritySettings({
     this.biometricsEnabled = true,
@@ -15,6 +16,7 @@ class SecuritySettings {
     this.clipboardClearSeconds = 30,
     this.failedAttempts = 0,
     this.lockoutUntil,
+    this.languageCode = 'it',
   });
 
   SecuritySettings copyWith({
@@ -24,6 +26,7 @@ class SecuritySettings {
     int? clipboardClearSeconds,
     int? failedAttempts,
     DateTime? lockoutUntil,
+    String? languageCode,
   }) {
     return SecuritySettings(
       biometricsEnabled: biometricsEnabled ?? this.biometricsEnabled,
@@ -32,6 +35,7 @@ class SecuritySettings {
       clipboardClearSeconds: clipboardClearSeconds ?? this.clipboardClearSeconds,
       failedAttempts: failedAttempts ?? this.failedAttempts,
       lockoutUntil: lockoutUntil,
+      languageCode: languageCode ?? this.languageCode,
     );
   }
 
@@ -42,6 +46,7 @@ class SecuritySettings {
     'clipboardClearSeconds': clipboardClearSeconds,
     'failedAttempts': failedAttempts,
     'lockoutUntil': lockoutUntil?.toIso8601String(),
+    'languageCode': languageCode,
   };
 
   factory SecuritySettings.fromJson(Map<String, dynamic> json) => SecuritySettings(
@@ -53,6 +58,7 @@ class SecuritySettings {
     lockoutUntil: json['lockoutUntil'] != null
         ? DateTime.tryParse(json['lockoutUntil'] as String)
         : null,
+    languageCode: json['languageCode'] as String? ?? 'it',
   );
 
   String serialize() => jsonEncode(toJson());

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/utils/password_generator.dart';
 
 class PasswordStrengthBar extends StatelessWidget {
@@ -16,6 +17,7 @@ class PasswordStrengthBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final l10n = context.l10n;
     final strength = PasswordGenerator.evaluateStrength(password);
     final segments = 4;
     int filledSegments = 1;
@@ -63,7 +65,7 @@ class PasswordStrengthBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Sicurezza: ${strength.label}',
+              '${l10n.securityLevelPrefix}: ${l10n.passwordStrengthLabel(strength)}',
               style: TextStyle(
                 color: strength.color,
                 fontSize: 12,
@@ -71,7 +73,7 @@ class PasswordStrengthBar extends StatelessWidget {
               ),
             ),
             Text(
-              '${password.length} caratteri',
+              l10n.passwordLengthLabel(password.length),
               style: const TextStyle(
                 color: AppColors.textMuted,
                 fontSize: 12,

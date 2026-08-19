@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_localizations.dart';
 import '../../core/services/clipboard_service.dart';
 import '../../models/vault_item.dart';
 import '../../providers/settings_provider.dart';
@@ -32,6 +33,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
   }
 
   void _copyField(String label, String value, int autoClearSeconds) {
+    final l10n = context.l10n;
     ClipboardService.copyWithAutoClear(value, autoClearSeconds: autoClearSeconds);
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -45,8 +47,8 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
             Expanded(
               child: Text(
                 autoClearSeconds > 0
-                    ? '$label copiato (auto-clear in ${autoClearSeconds}s)'
-                    : '$label copiato',
+                    ? l10n.fieldCopiedAutoClear(label, autoClearSeconds)
+                    : l10n.fieldCopied(label),
                 style: const TextStyle(color: AppColors.textPrimary),
               ),
             ),
@@ -62,6 +64,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
   }
 
   void _delete(VaultItem item) async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -82,10 +85,10 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
               child: const Icon(Icons.delete_outline_rounded, color: AppColors.danger, size: 22),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Elimina Elemento',
-                style: TextStyle(
+                l10n.deleteItemTitle,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -95,7 +98,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
           ],
         ),
         content: Text(
-          'Sei sicuro di voler eliminare permanentemente "${item.title}"?\n\nL\'operazione non potrà essere annullata.',
+          l10n.deleteItemConfirmMessage(item.title),
           style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -109,7 +112,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Annulla'),
+                  child: Text(l10n.cancelButton),
                 ),
               ),
               const SizedBox(width: 12),
@@ -122,7 +125,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('Elimina'),
+                  child: Text(l10n.deleteButton),
                 ),
               ),
             ],
@@ -171,13 +174,14 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
   Widget build(BuildContext context) {
     final vaultProvider = context.watch<VaultProvider>();
     final settingsProvider = context.watch<SettingsProvider>();
+    final l10n = context.l10n;
     final autoClear = settingsProvider.settings.clipboardClearSeconds;
 
     final item = vaultProvider.items.firstWhere(
       (i) => i.id == widget.itemId,
       orElse: () => VaultItem(
         id: 'deleted',
-        title: 'Elemento Eliminato',
+        title: l10n.itemDeletedFallback,
         category: VaultCategory.login,
       ),
     );
@@ -185,7 +189,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
     if (item.id == 'deleted') {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Elemento non trovato')),
+        body: Center(child: Text(l10n.itemNotFound)),
       );
     }
 
@@ -254,7 +258,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      item.category.displayName,
+                      l10n.categoryDisplayName(item.category),
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 14,
@@ -318,9 +322,9 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'INTESTATARIO',
-                              style: TextStyle(
+                            Text(
+                              l10n.cardHolderCardMockup,
+                              style: const TextStyle(
                                 color: Colors.white60,
                                 fontSize: 10,
                                 letterSpacing: 1,
@@ -328,7 +332,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              (item.cardHolder ?? 'TITOLARE').toUpperCase(),
+                              (item.cardHolder ?? l10n.cardHolderCardMockup).toUpperCase(),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
@@ -340,9 +344,9 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'SCADENZA',
-                              style: TextStyle(
+                            Text(
+                              l10n.cardExpiryCardMockup,
+                              style: const TextStyle(
                                 color: Colors.white60,
                                 fontSize: 10,
                                 letterSpacing: 1,
@@ -370,21 +374,21 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
             // Sensitive Fields List
             if (item.username != null && item.username!.isNotEmpty)
               _buildFieldTile(
-                title: 'Nome Utente / Email',
+                title: l10n.usernameLabel,
                 value: item.username!,
                 icon: Icons.person_outline_rounded,
-                onCopy: () => _copyField('Nome Utente', item.username!, autoClear),
+                onCopy: () => _copyField(l10n.usernameLabel, item.username!, autoClear),
               ),
 
             if (item.password != null && item.password!.isNotEmpty) ...[
               _buildFieldTile(
-                title: 'Password',
+                title: l10n.passwordLabel,
                 value: item.password!,
                 icon: Icons.lock_outline_rounded,
                 isSecret: true,
                 isObscured: _isObscured('password'),
                 onToggleObscure: () => _toggleObscured('password'),
-                onCopy: () => _copyField('Password', item.password!, autoClear),
+                onCopy: () => _copyField(l10n.passwordLabel, item.password!, autoClear),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -395,78 +399,78 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
 
             if (item.websiteUrl != null && item.websiteUrl!.isNotEmpty)
               _buildFieldTile(
-                title: 'Sito Web',
+                title: l10n.websiteLabel,
                 value: item.websiteUrl!,
                 icon: Icons.link_rounded,
-                onCopy: () => _copyField('Sito Web', item.websiteUrl!, 0),
+                onCopy: () => _copyField(l10n.websiteLabel, item.websiteUrl!, 0),
               ),
 
             if (item.cardNumber != null && item.cardNumber!.isNotEmpty)
               _buildFieldTile(
-                title: 'Numero Carta',
+                title: l10n.cardNumberLabel,
                 value: item.cardNumber!,
                 icon: Icons.credit_card_rounded,
                 isSecret: true,
                 isObscured: _isObscured('card_num'),
                 onToggleObscure: () => _toggleObscured('card_num'),
-                onCopy: () => _copyField('Numero Carta', item.cardNumber!, autoClear),
+                onCopy: () => _copyField(l10n.cardNumberLabel, item.cardNumber!, autoClear),
               ),
 
             if (item.cardCvv != null && item.cardCvv!.isNotEmpty)
               _buildFieldTile(
-                title: 'CVV / CVC',
+                title: l10n.cardCvvLabel,
                 value: item.cardCvv!,
                 icon: Icons.security_rounded,
                 isSecret: true,
                 isObscured: _isObscured('card_cvv'),
                 onToggleObscure: () => _toggleObscured('card_cvv'),
-                onCopy: () => _copyField('CVV', item.cardCvv!, autoClear),
+                onCopy: () => _copyField(l10n.cardCvvLabel, item.cardCvv!, autoClear),
               ),
 
             if (item.cardPin != null && item.cardPin!.isNotEmpty)
               _buildFieldTile(
-                title: 'PIN Carta',
+                title: l10n.cardPinLabel,
                 value: item.cardPin!,
                 icon: Icons.pin_rounded,
                 isSecret: true,
                 isObscured: _isObscured('card_pin'),
                 onToggleObscure: () => _toggleObscured('card_pin'),
-                onCopy: () => _copyField('PIN Carta', item.cardPin!, autoClear),
+                onCopy: () => _copyField(l10n.cardPinLabel, item.cardPin!, autoClear),
               ),
 
             if (item.email != null && item.email!.isNotEmpty)
               _buildFieldTile(
-                title: 'Email',
+                title: l10n.emailLabel,
                 value: item.email!,
                 icon: Icons.email_outlined,
-                onCopy: () => _copyField('Email', item.email!, 0),
+                onCopy: () => _copyField(l10n.emailLabel, item.email!, 0),
               ),
 
             if (item.phone != null && item.phone!.isNotEmpty)
               _buildFieldTile(
-                title: 'Telefono',
+                title: l10n.phoneLabel,
                 value: item.phone!,
                 icon: Icons.phone_outlined,
-                onCopy: () => _copyField('Telefono', item.phone!, 0),
+                onCopy: () => _copyField(l10n.phoneLabel, item.phone!, 0),
               ),
 
             if (item.idNumber != null && item.idNumber!.isNotEmpty)
               _buildFieldTile(
-                title: 'Codice Fiscale / Documento',
+                title: l10n.idNumberLabel,
                 value: item.idNumber!,
                 icon: Icons.badge_outlined,
-                onCopy: () => _copyField('Documento', item.idNumber!, 0),
+                onCopy: () => _copyField(l10n.idNumberLabel, item.idNumber!, 0),
               ),
 
             if (item.apiKeySecret != null && item.apiKeySecret!.isNotEmpty)
               _buildFieldTile(
-                title: 'Chiave API / Token',
+                title: l10n.apiKeySecretLabel,
                 value: item.apiKeySecret!,
                 icon: Icons.vpn_key_outlined,
                 isSecret: true,
                 isObscured: _isObscured('api_key'),
                 onToggleObscure: () => _toggleObscured('api_key'),
-                onCopy: () => _copyField('Chiave API', item.apiKeySecret!, autoClear),
+                onCopy: () => _copyField(l10n.apiKeySecretLabel, item.apiKeySecret!, autoClear),
               ),
 
             // Custom fields
@@ -499,8 +503,8 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                       children: [
                         Text(
                           item.category == VaultCategory.note
-                              ? 'Contenuto Nota'
-                              : 'Note Aggiuntive',
+                              ? l10n.notesLabel
+                              : l10n.notesLabel,
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 13,
@@ -509,7 +513,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.copy_rounded, size: 18),
-                          onPressed: () => _copyField('Note', item.notes!, autoClear),
+                          onPressed: () => _copyField(l10n.notesLabel, item.notes!, autoClear),
                         ),
                       ],
                     ),
@@ -536,7 +540,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
                 ),
                 child: const Center(
                   child: Text(
-                    'Nessun testo salvato in questa nota.',
+                    '- - -',
                     style: TextStyle(
                       color: AppColors.textMuted,
                       fontStyle: FontStyle.italic,

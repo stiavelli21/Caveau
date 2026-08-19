@@ -44,4 +44,10 @@ class SettingsProvider extends ChangeNotifier {
     await _storageService.saveSecuritySettings(_settings);
     notifyListeners();
   }
+
+  Future<void> updateLanguage(String languageCode) async {
+    _settings = _settings.copyWith(languageCode: languageCode);
+    await _storageService.saveSecuritySettings(_settings);
+    notifyListeners();
+  }
 }
