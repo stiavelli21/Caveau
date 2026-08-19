@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="docTitle">Caveau - Privacy Policy & Terms of Service</title>
+  <meta id="docDescription" name="description"
+    content="Privacy Policy and Terms of Service for Caveau: 100% offline, zero-knowledge, open-source encrypted password and notes manager.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0B0F19;
+      --bg-surface: #131B2E;
+      --bg-card: #1E293B;
+      --border-color: #243046;
+      --border-subtle: #1E293B;
+      --accent-primary: #6366F1;
+      --accent-light: #818CF8;
+      --accent-emerald: #10B981;
+      --accent-emerald-light: #34D399;
+      --accent-danger: #EF4444;
+      --accent-warning: #F59E0B;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      line-height: 1.65;
+      padding: 0;
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 36px 24px 80px 24px;
+    }
+
+    /* Top Language Switcher Bar */
+    .top-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .lang-selector {
+      display: inline-flex;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-main);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s ease-in-out;
+      user-select: none;
+    }
+
+    .lang-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .lang-btn.active {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(99, 102, 241, 0.45);
+      color: var(--accent-light);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+    }
+
+    header {
+      text-align: center;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 36px;
+    }
+
+    .badge-top {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--accent-emerald-light);
+      padding: 5px 14px;
+      border-radius: 9999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      letter-spacing: 0.3px;
+    }
+
+    h1 {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 15.5px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .meta-info {
+      display: flex;
+      justify-content: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 28px 30px;
+      margin-bottom: 24px;
+      transition: border-color 0.2s ease;
+    }
+
+    .section:hover {
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-primary);
+    }
+
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--accent-light);
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      flex-shrink: 0;
+    }
+
+    p {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin-bottom: 14px;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul {
+      list-style-type: none;
+      padding-left: 0;
+      margin-bottom: 14px;
+    }
+
+    li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 10px;
+      color: var(--text-secondary);
+      font-size: 14.5px;
+    }
+
+    li::before {
+      content: "-";
+      position: absolute;
+      left: 6px;
+      top: 0;
+      color: var(--accent-light);
+      font-weight: 600;
+    }
+
+    .alert-box {
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin: 18px 0;
+    }
+
+    .alert-warning {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.22);
+      color: #FDE68A;
+    }
+
+    .alert-danger {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.22);
+      color: #FECACA;
+    }
+
+    .alert-content h4 {
+      font-size: 13.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: inherit;
+    }
+
+    .alert-content p {
+      font-size: 13.5px;
+      color: inherit;
+      opacity: 0.95;
+      margin-bottom: 0;
+    }
+
+    .code-pill {
+      font-family: var(--font-mono);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      color: var(--accent-light);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .card-small {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .card-small h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .card-small p {
+      font-size: 13.5px;
+      margin-bottom: 0;
+    }
+
+    a {
+      color: var(--accent-light);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: #C7D2FE;
+      text-decoration: underline;
+    }
+
+    .btn-github {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-color);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      text-decoration: none !important;
+      margin-top: 12px;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-github:hover {
+      background: #26344E;
+      border-color: #3B4D6D;
+      text-decoration: none !important;
+    }
+
+    footer {
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+      .top-bar {
+        justify-content: center;
+      }
+
+      .lang-selector {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .lang-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .container {
+        padding: 24px 16px 60px 16px;
+      }
+
+      .section {
+        padding: 20px 18px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <!-- TOP LANGUAGE SELECTOR -->
+    <div class="top-bar">
+      <div class="lang-selector" id="langSelector" role="group" aria-label="Language Selector">
+        <button type="button" class="lang-btn active" data-lang="en" onclick="setLanguage('en')">🇬🇧 English</button>
+        <button type="button" class="lang-btn" data-lang="it" onclick="setLanguage('it')">🇮🇹 Italiano</button>
+        <button type="button" class="lang-btn" data-lang="es" onclick="setLanguage('es')">🇪🇸 Español</button>
+        <button type="button" class="lang-btn" data-lang="fr" onclick="setLanguage('fr')">🇫🇷 Français</button>
+        <button type="button" class="lang-btn" data-lang="de" onclick="setLanguage('de')">🇩🇪 Deutsch</button>
+      </div>
+    </div>
+
+    <!-- HEADER -->
+    <header>
+      <div class="badge-top" data-i18n="badge_top">Zero-Knowledge & 100% Offline</div>
+      <h1>Caveau</h1>
+      <p class="subtitle" data-i18n="subtitle">Application Privacy Policy and Terms of Service</p>
+      <div class="meta-info">
+        <span data-i18n="version">Version: 1.0.0</span>
+      </div>
+    </header>
+
+    <!-- SECTION 1: ZERO DATA COLLECTION -->
+    <div class="section">
+      <h2><span class="section-number">01</span> <span data-i18n="sec1_title">Zero Data Collection</span></h2>
+      <p data-i18n="sec1_p1">
+        <strong>Caveau is a 100% offline, private password and secrets manager built on a Zero-Knowledge architecture.</strong>
+      </p>
+      <p data-i18n="sec1_p2">
+        Our privacy policy is simple and absolute: <strong>we do not collect, track, store, or share any personal data or usage metrics.</strong>
+      </p>
+      <ul>
+        <li data-i18n="sec1_li1"><strong>No Remote Servers:</strong> Caveau does not operate any cloud servers, databases, or backend infrastructure. All data resides exclusively on your device.</li>
+        <li data-i18n="sec1_li2"><strong>No Internet Permission:</strong> The application is compiled without network permissions (<span class="code-pill">android.permission.INTERNET</span>), making it technically impossible for the app to communicate externally.</li>
+        <li data-i18n="sec1_li3"><strong>No Telemetry or Ads:</strong> Zero behavioral tracking, no third-party crash reporters, and zero advertisements.</li>
+      </ul>
+    </div>
+
+    <!-- SECTION 2: HARDWARE ENCRYPTION -->
+    <div class="section">
+      <h2><span class="section-number">02</span> <span data-i18n="sec2_title">Hardware-Backed Cryptography & Security</span></h2>
+      <p data-i18n="sec2_p1">
+        All credentials, notes, payment cards, identities, and API tokens stored in Caveau are encrypted locally using the highest cryptographic standards provided by your operating system:
+      </p>
+      <div class="grid-2">
+        <div class="card-small">
+          <h3 data-i18n="sec2_c1_title">Hardware Keystore</h3>
+          <p data-i18n="sec2_c1_desc">Hardware-backed <span class="code-pill">AES-256</span> encryption isolated within the device's secure element / Secure Enclave.</p>
+        </div>
+        <div class="card-small">
+          <h3 data-i18n="sec2_c2_title">Hybrid Authentication</h3>
+          <p data-i18n="sec2_c2_desc">Biometric access (Face ID, Fingerprint) with fallback to a Master PIN protected by iterative cryptographic hashing (5,000 rounds SHA-256) and a 256-bit salt.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: BACKUP & RESPONSIBILITY -->
+    <div class="section">
+      <h2><span class="section-number">03</span> <span data-i18n="sec3_title">Backups, Data Loss & Limitation of Liability</span></h2>
+      <p data-i18n="sec3_p1">
+        Because Caveau is strictly offline and operates without central servers:
+      </p>
+
+      <div class="alert-box alert-danger">
+        <div class="alert-content">
+          <h4 data-i18n="sec3_alert1_title">No Password Recovery Available</h4>
+          <p data-i18n="sec3_alert1_desc">
+            <strong>You are the sole and exclusive custodian of your Master PIN and decryption keys.</strong> The developer does not hold copies of your keys and there is no backdoor, recovery mechanism, or customer support to reset a forgotten Master PIN.
+          </p>
+        </div>
+      </div>
+
+      <div class="alert-box alert-warning">
+        <div class="alert-content">
+          <h4 data-i18n="sec3_alert2_title">Vital Importance of Exported Backups</h4>
+          <p data-i18n="sec3_alert2_desc">
+            In case of app uninstallation, device wipe, loss, or hardware failure, your stored data will be <strong>permanently and irretrievably lost</strong> if you have not exported a backup.
+          </p>
+        </div>
+      </div>
+
+      <p data-i18n="sec3_backup_desc">
+        <strong>How Backups Work in Caveau:</strong><br>
+        Caveau allows you to export an encrypted backup archive (.json) at any time. This file is <strong>fully encrypted with a password of your choice</strong> and verified with a cryptographic <span class="code-pill">SHA-256</span> checksum. We strongly recommend saving this backup file in a secure external location (e.g., USB drive, personal cloud, or Google Drive).
+      </p>
+
+      <p data-i18n="sec3_disclaimer_desc">
+        <strong>Limitation of Liability:</strong><br>
+        The application is provided <em>"as is"</em>, without warranty of any kind, express or implied. The developer expressly disclaims any liability for any data loss, corruption, or unavailability resulting from forgotten Master PINs, hardware failure, lack of user backups, or operating system tampering (e.g., root/jailbreak).
+      </p>
+    </div>
+
+    <!-- SECTION 4: OPEN SOURCE -->
+    <div class="section">
+      <h2><span class="section-number">04</span> <span data-i18n="sec4_title">Open Source Transparency</span></h2>
+      <p data-i18n="sec4_p1">
+        We firmly believe that cybersecurity must never rely on obscurity (<em>Kerckhoffs's Principle</em>). To ensure absolute transparency and allow anyone to audit the code for the absence of backdoors or telemetry, Caveau's complete source code is published as an Open Source project.
+      </p>
+      <a href="https://github.com/stiavelli21/Caveau" target="_blank" rel="noopener noreferrer" class="btn-github">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+        </svg>
+        <span data-i18n="sec4_btn">Explore the Repository on GitHub</span>
+      </a>
+    </div>
+
+    <!-- SECTION 5: CONTACT -->
+    <div class="section">
+      <h2><span class="section-number">05</span> <span data-i18n="sec5_title">Contact & Developer Information</span></h2>
+      <p data-i18n="sec5_p1">
+        For questions, security inquiries, or feedback regarding the Caveau application:
+      </p>
+      <p>
+        <strong data-i18n="sec5_dev_label">Developer:</strong> Stiavelli<br>
+        <strong data-i18n="sec5_email_label">Email:</strong> <a href="mailto:stiavelli.test@gmail.com">stiavelli.test@gmail.com</a>
+      </p>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+      <p data-i18n="footer">&copy; 2026 Caveau. Open Source project protected by local hardware encryption.</p>
+    </footer>
+  </div>
+
+  <script>
+    const translations = {
+      en: {
+        doc_title: "Caveau - Privacy Policy & Terms of Service",
+        doc_desc: "Privacy Policy and Terms of Service for Caveau: 100% offline, zero-knowledge, open-source encrypted password and notes manager.",
+        badge_top: "Zero-Knowledge & 100% Offline",
+        subtitle: "Application Privacy Policy and Terms of Service",
+        version: "Version: 1.0.0",
+        sec1_title: "Zero Data Collection",
+        sec1_p1: "<strong>Caveau is a 100% offline, private password and secrets manager built on a Zero-Knowledge architecture.</strong>",
+        sec1_p2: "Our privacy policy is simple and absolute: <strong>we do not collect, track, store, or share any personal data or usage metrics.</strong>",
+        sec1_li1: "<strong>No Remote Servers:</strong> Caveau does not operate any cloud servers, databases, or backend infrastructure. All data resides exclusively on your device.",
+        sec1_li2: "<strong>No Internet Permission:</strong> The application is compiled without network permissions (<span class=\"code-pill\">android.permission.INTERNET</span>), making it technically impossible for the app to communicate externally.",
+        sec1_li3: "<strong>No Telemetry or Ads:</strong> Zero behavioral tracking, no third-party crash reporters, and zero advertisements.",
+        sec2_title: "Hardware-Backed Cryptography & Security",
+        sec2_p1: "All credentials, notes, payment cards, identities, and API tokens stored in Caveau are encrypted locally using the highest cryptographic standards provided by your operating system:",
+        sec2_c1_title: "Hardware Keystore",
+        sec2_c1_desc: "Hardware-backed <span class=\"code-pill\">AES-256</span> encryption isolated within the device's secure element / Secure Enclave.",
+        sec2_c2_title: "Hybrid Authentication",
+        sec2_c2_desc: "Biometric access (Face ID, Fingerprint) with fallback to a Master PIN protected by iterative cryptographic hashing (5,000 rounds SHA-256) and a 256-bit salt.",
+        sec3_title: "Backups, Data Loss & Limitation of Liability",
+        sec3_p1: "Because Caveau is strictly offline and operates without central servers:",
+        sec3_alert1_title: "No Password Recovery Available",
+        sec3_alert1_desc: "<strong>You are the sole and exclusive custodian of your Master PIN and decryption keys.</strong> The developer does not hold copies of your keys and there is no backdoor, recovery mechanism, or customer support to reset a forgotten Master PIN.",
+        sec3_alert2_title: "Vital Importance of Exported Backups",
+        sec3_alert2_desc: "In case of app uninstallation, device wipe, loss, or hardware failure, your stored data will be <strong>permanently and irretrievably lost</strong> if you have not exported a backup.",
+        sec3_backup_desc: "<strong>How Backups Work in Caveau:</strong><br>Caveau allows you to export an encrypted backup archive (.json) at any time. This file is <strong>fully encrypted with a password of your choice</strong> and verified with a cryptographic <span class=\"code-pill\">SHA-256</span> checksum. We strongly recommend saving this backup file in a secure external location (e.g., USB drive, personal cloud, or Google Drive).",
+        sec3_disclaimer_desc: "<strong>Limitation of Liability:</strong><br>The application is provided <em>\"as is\"</em>, without warranty of any kind, express or implied. The developer expressly disclaims any liability for any data loss, corruption, or unavailability resulting from forgotten Master PINs, hardware failure, lack of user backups, or operating system tampering (e.g., root/jailbreak).",
+        sec4_title: "Open Source Transparency",
+        sec4_p1: "We firmly believe that cybersecurity must never rely on obscurity (<em>Kerckhoffs's Principle</em>). To ensure absolute transparency and allow anyone to audit the code for the absence of backdoors or telemetry, Caveau's complete source code is published as an Open Source project.",
+        sec4_btn: "Explore the Repository on GitHub",
+        sec5_title: "Contact & Developer Information",
+        sec5_p1: "For questions, security inquiries, or feedback regarding the Caveau application:",
+        sec5_dev_label: "Developer:",
+        sec5_email_label: "Email:",
+        footer: "&copy; 2026 Caveau. Open Source project protected by local hardware encryption."
+      },
+      it: {
+        doc_title: "Caveau - Privacy Policy & Termini di Servizio",
+        doc_desc: "Informativa sulla Privacy e Termini di Servizio per Caveau: Gestore di password e note crittografate 100% offline, zero-knowledge e open source.",
+        badge_top: "Zero-Knowledge & 100% Offline",
+        subtitle: "Informativa sulla Privacy e Termini di Servizio dell'Applicazione",
+        version: "Versione: 1.0.0",
+        sec1_title: "Nessun Dato Raccolto (Zero Data Collection)",
+        sec1_p1: "<strong>Caveau è un'applicazione al 100% offline, privata e basata sull'architettura Zero-Knowledge.</strong>",
+        sec1_p2: "La nostra politica sulla privacy è estremamente semplice: <strong>non raccogliamo, non tracciamo, non conserviamo e non condividiamo alcun dato personale o dato di utilizzo.</strong>",
+        sec1_li1: "<strong>Nessun server remoto:</strong> Caveau non possiede server, database cloud o backend. Tutti i dati restano esclusivamente sul dispositivo dell'utente.",
+        sec1_li2: "<strong>Nessun permesso Internet:</strong> L'applicazione è compilata senza il permesso di rete (<span class=\"code-pill\">android.permission.INTERNET</span>), rendendo tecnicamente impossibile per l'app comunicare con l'esterno.",
+        sec1_li3: "<strong>Nessuna telemetria o pubblicità:</strong> Nessun tracciamento comportamentale, nessun analizzatore di crash di terze parti e nessuna inserzione pubblicitaria.",
+        sec2_title: "Crittografia e Sicurezza Hardware",
+        sec2_p1: "Tutte le credenziali, note, carte di pagamento, identità e token API salvati all'interno di Caveau vengono cifrati localmente sfruttando i massimi standard crittografici supportati dal sistema operativo:",
+        sec2_c1_title: "Android Keystore / iOS Keychain",
+        sec2_c1_desc: "Cifratura hardware-backed <span class=\"code-pill\">AES-256</span> isolata a livello di chip di sicurezza del dispositivo.",
+        sec2_c2_title: "Autenticazione Ibrida",
+        sec2_c2_desc: "Accesso biometrico (Face ID, Impronta) con fallback su PIN Master protetto da hash iterativo crittografico (5.000 round SHA-256) e Salt a 256-bit.",
+        sec3_title: "Backup, Perdita Dati e Limitazione di Responsabilità",
+        sec3_p1: "Poiché Caveau è un'applicazione rigorosamente offline e priva di server:",
+        sec3_alert1_title: "Nessun Recupero Password Disponibile",
+        sec3_alert1_desc: "<strong>L'utente è l'unico ed esclusivo custode del proprio PIN Master e delle proprie chiavi di decifratura.</strong> Lo sviluppatore non possiede copie delle chiavi e non esiste alcun meccanismo o servizio clienti per recuperare un PIN dimenticato.",
+        sec3_alert2_title: "Importanza Vitale dei Backup Esportati",
+        sec3_alert2_desc: "In caso di disinstallazione dell'app, cancellazione dei dati di sistema, smarrimento o rottura del dispositivo, i dati saranno <strong>irrimediabilmente persi</strong> se l'utente non ha provveduto ad esportare un backup.",
+        sec3_backup_desc: "<strong>Come funzionano i backup in Caveau:</strong><br>Caveau consente di esportare in qualsiasi momento un archivio di backup (.json cifrato). Tale file viene <strong>completamente cifrato con una password scelta dall'utente</strong> e validato con un checksum crittografico <span class=\"code-pill\">SHA-256</span>. Si consiglia vivamente di salvare questo file in una posizione sicura esterna al telefono (es. chiavetta USB, cloud personale o Google Drive).",
+        sec3_disclaimer_desc: "<strong>Esclusione di Responsabilità:</strong><br>L'applicazione viene fornita <em>\"così com'è\" (as is)</em>, senza garanzie di alcun tipo. Lo sviluppatore declina espressamente ogni responsabilità per qualsiasi perdita, corruzione o indisponibilità di dati derivante da dimenticanza del PIN Master, guasti del dispositivo, mancata esecuzione dei backup o manomissioni del sistema operativo (es. root/jailbreak).",
+        sec4_title: "Trasparenza Open Source",
+        sec4_p1: "Crediamo che la sicurezza informatica non debba mai basarsi sulla segretezza del codice (<em>Principio di Kerckhoffs</em>). Per garantire trasparenza assoluta e consentire a chiunque di verificare l'assenza di backdoor o telemetria, il codice sorgente completo di Caveau è pubblicato come progetto Open Source.",
+        sec4_btn: "Esplora il repository su GitHub",
+        sec5_title: "Contatti e Sviluppatore",
+        sec5_p1: "Per domande, segnalazioni di sicurezza o informazioni sull'applicazione Caveau:",
+        sec5_dev_label: "Sviluppatore:",
+        sec5_email_label: "Email:",
+        footer: "&copy; 2026 Caveau. Progetto Open Source protetto da crittografia hardware locale."
+      },
+      es: {
+        doc_title: "Caveau - Política de Privacidad y Términos de Servicio",
+        doc_desc: "Política de Privacidad y Términos de Servicio para Caveau: Gestor de contraseñas y notas cifradas 100% offline, zero-knowledge y código abierto.",
+        badge_top: "Zero-Knowledge & 100% Offline",
+        subtitle: "Política de Privacidad y Términos de Servicio de la Aplicación",
+        version: "Versión: 1.0.0",
+        sec1_title: "Cero Recopilación de Datos (Zero Data Collection)",
+        sec1_p1: "<strong>Caveau es una aplicación 100% offline, privada y basada en una arquitectura Zero-Knowledge.</strong>",
+        sec1_p2: "Nuestra política de privacidad es completamente directa: <strong>no recopilamos, no rastreamos, no almacenamos ni compartimos ningún dato personal ni métricas de uso.</strong>",
+        sec1_li1: "<strong>Sin servidores remotos:</strong> Caveau no posee servidores en la nube, bases de datos ni backend. Todos los datos permanecen exclusivamente en el dispositivo del usuario.",
+        sec1_li2: "<strong>Sin permiso de Internet:</strong> La aplicación está compilada sin permisos de red (<span class=\"code-pill\">android.permission.INTERNET</span>), haciendo técnicamente imposible que la app se comunique con el exterior.",
+        sec1_li3: "<strong>Sin telemetría ni anuncios:</strong> Sin seguimiento de comportamiento, sin analizadores de fallos de terceros y sin publicidad.",
+        sec2_title: "Criptografía y Seguridad por Hardware",
+        sec2_p1: "Todas las credenciales, notas, tarjetas de pago, identidades y tokens de API almacenados en Caveau se cifran localmente utilizando los estándares criptográficos más altos soportados por su sistema operativo:",
+        sec2_c1_title: "Android Keystore / iOS Keychain",
+        sec2_c1_desc: "Cifrado <span class=\"code-pill\">AES-256</span> respaldado por hardware y aislado a nivel del chip de seguridad del dispositivo.",
+        sec2_c2_title: "Autenticación Híbrida",
+        sec2_c2_desc: "Acceso biométrico (Face ID, huella digital) con respaldo de PIN Maestro protegido por hash iterativo (5.000 rondas SHA-256) y salt de 256 bits.",
+        sec3_title: "Copias de Seguridad, Pérdida de Datos y Limitación de Responsabilidad",
+        sec3_p1: "Dado que Caveau es estrictamente offline y no cuenta con servidores centrales:",
+        sec3_alert1_title: "Sin Recuperación de Contraseña Disponible",
+        sec3_alert1_desc: "<strong>Usted es el único y exclusivo custodio de su PIN Maestro y de sus claves de descifrado.</strong> El desarrollador no posee copias de sus claves y no existe ningún mecanismo de recuperación o soporte técnico para restablecer un PIN olvidado.",
+        sec3_alert2_title: "Importancia Vital de las Copias de Seguridad",
+        sec3_alert2_desc: "En caso de desinstalar la app, borrar datos del sistema, pérdida o rotura del dispositivo, sus datos se perderán de forma <strong>permanente e irrecuperable</strong> si no ha exportado una copia de seguridad.",
+        sec3_backup_desc: "<strong>Cómo funcionan las copias de seguridad en Caveau:</strong><br>Caveau le permite exportar en cualquier momento un archivo de copia de seguridad (.json cifrado). Dicho archivo está <strong>completamente cifrado con una contraseña elegida por usted</strong> y verificado mediante una suma de comprobación <span class=\"code-pill\">SHA-256</span>. Se recomienda encarecidamente guardar este archivo en un lugar seguro fuera del teléfono (ej. memoria USB, nube personal o Google Drive).",
+        sec3_disclaimer_desc: "<strong>Limitación de Responsabilidad:</strong><br>La aplicación se proporciona <em>\"tal cual\" (as is)</em>, sin garantías de ningún tipo. El desarrollador declina expresamente toda responsabilidad por cualquier pérdida, corrupción o indisponibilidad de datos derivada del olvido del PIN Maestro, fallos del dispositivo, falta de copias de seguridad o modificaciones del sistema operativo (ej. root/jailbreak).",
+        sec4_title: "Transparencia Open Source",
+        sec4_p1: "Creemos que la ciberseguridad nunca debe depender de la ocultación del código (<em>Principio de Kerckhoffs</em>). Para garantizar una transparencia absoluta y permitir que cualquiera audite la ausencia de puertas traseras o telemetría, el código fuente completo de Caveau se publica como proyecto de código abierto.",
+        sec4_btn: "Explorar el repositorio en GitHub",
+        sec5_title: "Contacto e Información del Desarrollador",
+        sec5_p1: "Para preguntas, consultas de seguridad o comentarios sobre la aplicación Caveau:",
+        sec5_dev_label: "Desarrollador:",
+        sec5_email_label: "Correo electrónico:",
+        footer: "&copy; 2026 Caveau. Proyecto de código abierto protegido por cifrado local por hardware."
+      },
+      fr: {
+        doc_title: "Caveau - Politique de Confidentialité & Conditions d'Utilisation",
+        doc_desc: "Politique de Confidentialité et Conditions d'Utilisation pour Caveau : Gestionnaire de mots de passe et notes chiffrées 100% hors ligne, zero-knowledge et open source.",
+        badge_top: "Zero-Knowledge & 100% Hors Ligne",
+        subtitle: "Politique de Confidentialité et Conditions d'Utilisation de l'Application",
+        version: "Version : 1.0.0",
+        sec1_title: "Aucune Donnée Collectée (Zero Data Collection)",
+        sec1_p1: "<strong>Caveau est une application 100% hors ligne, privée et reposant sur une architecture Zero-Knowledge.</strong>",
+        sec1_p2: "Notre politique de confidentialité est limpide : <strong>nous ne collectons, ne traquons, ne stockons et ne partageons aucune donnée personnelle ni donnée d'utilisation.</strong>",
+        sec1_li1: "<strong>Aucun serveur distant :</strong> Caveau ne possède aucun serveur cloud, base de données ou infrastructure backend. Toutes les données demeurent exclusivement sur votre appareil.",
+        sec1_li2: "<strong>Aucune autorisation Internet :</strong> L'application est compilée sans autorisation réseau (<span class=\"code-pill\">android.permission.INTERNET</span>), ce qui rend techniquement impossible toute communication extérieure.",
+        sec1_li3: "<strong>Aucune télémétrie ni publicité :</strong> Aucun suivi comportemental, aucun outil d'analyse de crash tiers et aucune publicité.",
+        sec2_title: "Chiffrement et Sécurité Matérielle",
+        sec2_p1: "Tous les identifiants, notes, cartes de paiement, identités et jetons d'API enregistrés dans Caveau sont chiffrés localement selon les normes cryptographiques les plus strictes de votre système d'exploitation :",
+        sec2_c1_title: "Android Keystore / iOS Keychain",
+        sec2_c1_desc: "Chiffrement matériel <span class=\"code-pill\">AES-256</span> isolé au niveau de la puce de sécurité de l'appareil.",
+        sec2_c2_title: "Authentification Hybride",
+        sec2_c2_desc: "Accès biométrique (Face ID, empreinte digitale) avec secours par Code PIN Principal protégé par hachage itératif (5 000 itérations SHA-256) et sel de 256 bits.",
+        sec3_title: "Sauvegardes, Perte de Données et Limitation de Responsabilité",
+        sec3_p1: "Puisque Caveau est strictement hors ligne et sans serveur centralisé :",
+        sec3_alert1_title: "Aucune Récupération de Mot de Passe Disponible",
+        sec3_alert1_desc: "<strong>Vous êtes le seul et unique gardien de votre Code PIN Principal et de vos clés de déchiffrement.</strong> Le développeur ne détient aucune copie de vos clés et il n'existe aucun moyen de récupération ni support client pour réinitialiser un PIN oublié.",
+        sec3_alert2_title: "Importance Vitale des Sauvegardes Exportées",
+        sec3_alert2_desc: "En cas de désinstallation de l'application, de réinitialisation du système, de perte ou de panne de l'appareil, vos données seront <strong>irrémédiablement perdues</strong> si vous n'avez pas exporté de sauvegarde.",
+        sec3_backup_desc: "<strong>Comment fonctionnent les sauvegardes dans Caveau :</strong><br>Caveau vous permet d'exporter à tout moment une archive de sauvegarde (.json chiffré). Ce fichier est <strong>entièrement chiffré avec un mot de passe défini par vous</strong> et vérifié par une somme de contrôle <span class=\"code-pill\">SHA-256</span>. Nous vous conseillons vivement de conserver ce fichier dans un emplacement sûr hors de votre téléphone (ex. clé USB, cloud personnel ou Google Drive).",
+        sec3_disclaimer_desc: "<strong>Limitation de Responsabilité :</strong><br>L'application est fournie <em>\"en l'état\" (as is)</em>, sans garantie d'aucune sorte. Le développeur décline expressément toute responsabilité pour toute perte, corruption ou indisponibilité de données résultant de l'oubli du Code PIN Principal, d'une panne matérielle, de l'absence de sauvegarde ou d'altérations du système (ex. root/jailbreak).",
+        sec4_title: "Transparence Open Source",
+        sec4_p1: "Nous sommes convaincus que la cybersécurité ne doit jamais reposer sur le secret du code (<em>Principe de Kerckhoffs</em>). Pour garantir une transparence totale et permettre l'audit indépendant du code, l'intégralité du code source de Caveau est publiée en Open Source.",
+        sec4_btn: "Explorer le dépôt sur GitHub",
+        sec5_title: "Contact et Développeur",
+        sec5_p1: "Pour toute question, demande de sécurité ou retour concernant l'application Caveau :",
+        sec5_dev_label: "Développeur :",
+        sec5_email_label: "E-mail :",
+        footer: "&copy; 2026 Caveau. Projet Open Source protégé par chiffrement matériel local."
+      },
+      de: {
+        doc_title: "Caveau - Datenschutzerklärung & Nutzungsbedingungen",
+        doc_desc: "Datenschutzerklärung und Nutzungsbedingungen für Caveau: 100% offline, Zero-Knowledge und Open-Source-Passwort- und Notiztresor.",
+        badge_top: "Zero-Knowledge & 100% Offline",
+        subtitle: "Datenschutzerklärung und Nutzungsbedingungen der Anwendung",
+        version: "Version: 1.0.0",
+        sec1_title: "Keine Datenerfassung (Zero Data Collection)",
+        sec1_p1: "<strong>Caveau ist eine 100% offline, private und auf einer Zero-Knowledge-Architektur basierende Anwendung.</strong>",
+        sec1_p2: "Unsere Datenschutzrichtlinie ist unmissverständlich: <strong>Wir erfassen, verfolgen, speichern und teilen keinerlei personenbezogene Daten oder Nutzungsstatistiken.</strong>",
+        sec1_li1: "<strong>Keine Remote-Server:</strong> Caveau betreibt keine Cloud-Server, Datenbanken oder Backend-Dienste. Alle Daten verbleiben ausschließlich auf Ihrem Gerät.",
+        sec1_li2: "<strong>Keine Internetberechtigung:</strong> Die Anwendung ist ohne Netzwerkberechtigung (<span class=\"code-pill\">android.permission.INTERNET</span>) kompiliert, wodurch jegliche externe Kommunikation technisch unmöglich ist.",
+        sec1_li3: "<strong>Keine Telemetrie oder Werbung:</strong> Kein Nutzer-Tracking, keine Absturzanalyse-Dienste von Drittanbietern und keinerlei Werbung.",
+        sec2_title: "Kryptografie & Hardware-Sicherheit",
+        sec2_p1: "Alle in Caveau gespeicherten Zugangsdaten, Notizen, Zahlungskarten, Identitäten und API-Tokens werden lokal nach den höchsten Sicherheitsstandards Ihres Betriebssystems verschlüsselt:",
+        sec2_c1_title: "Android Keystore / iOS Keychain",
+        sec2_c1_desc: "Hardware-gestützte <span class=\"code-pill\">AES-256</span>-Verschlüsselung, isoliert im Sicherheitschip des Geräts.",
+        sec2_c2_title: "Hybride Authentifizierung",
+        sec2_c2_desc: "Biometrischer Zugriff (Face ID, Fingerabdruck) mit Fallback auf Master-PIN, geschützt durch iteratives Hashing (5.000 Runden SHA-256) und 256-Bit-Salt.",
+        sec3_title: "Backups, Datenverlust & Haftungsbeschränkung",
+        sec3_p1: "Da Caveau streng offline arbeitet und keine Server besitzt:",
+        sec3_alert1_title: "Keine Passwortwiederherstellung möglich",
+        sec3_alert1_desc: "<strong>Sie sind der alleinige Verwalter Ihrer Master-PIN und Ihrer Entschlüsselungsschlüssel.</strong> Der Entwickler besitzt keine Kopien und es gibt keinen Mechanismus oder Support, um eine vergessene PIN zurückzusetzen.",
+        sec3_alert2_title: "Essenzielle Bedeutung exportierter Backups",
+        sec3_alert2_desc: "Bei einer Deinstallation der App, dem Löschen von Systemdaten, Geräteverlust oder -defekt gehen Ihre Daten <strong>unwiderruflich verloren</strong>, sofern Sie kein Backup exportiert haben.",
+        sec3_backup_desc: "<strong>So funktionieren Backups in Caveau:</strong><br>Caveau ermöglicht es Ihnen, jederzeit ein verschlüsseltes Backup-Archiv (.json) zu exportieren. Diese Datei wird <strong>vollständig mit einem von Ihnen gewählten Passwort verschlüsselt</strong> und mit einer <span class=\"code-pill\">SHA-256</span>-Prüfsumme validiert. Wir empfehlen dringend, diese Datei an einem sicheren externen Ort (z. B. USB-Stick, persönliche Cloud oder Google Drive) zu sichern.",
+        sec3_disclaimer_desc: "<strong>Haftungsausschluss:</strong><br>Die Anwendung wird <em>\"wie besehen\" (as is)</em> ohne jegliche Gewährleistung bereitgestellt. Der Entwickler schließt jegliche Haftung für Datenverluste, Beschädigungen oder Nichtverfügbarkeit infolge vergessener PINs, Gerätedefekte, fehlender Backups oder Systemmanipulationen (z. B. Root/Jailbreak) ausdrücklich aus.",
+        sec4_title: "Open-Source-Transparenz",
+        sec4_p1: "Wir sind davon überzeugt, dass Cybersicherheit niemals auf Geheimhaltung des Codes basieren darf (<em>Kerckhoffs-Prinzip</em>). Um absolute Transparenz zu gewährleisten und jedem die Überprüfung auf Hintertüren zu ermöglichen, ist der gesamte Quellcode von Caveau als Open-Source-Projekt veröffentlicht.",
+        sec4_btn: "Repository auf GitHub erkunden",
+        sec5_title: "Kontakt & Entwicklerinformationen",
+        sec5_p1: "Bei Fragen, Sicherheitsmeldungen oder Feedback zur Anwendung Caveau:",
+        sec5_dev_label: "Entwickler:",
+        sec5_email_label: "E-Mail:",
+        footer: "&copy; 2026 Caveau. Open-Source-Projekt geschützt durch lokale Hardware-Verschlüsselung."
+      }
+    };
+
+    function setLanguage(lang) {
+      if (!translations[lang]) {
+        lang = 'en';
+      }
+
+      // Save preference
+      try {
+        localStorage.setItem('caveau_policy_lang', lang);
+      } catch (e) {}
+
+      // Update HTML lang attribute
+      document.documentElement.lang = lang;
+
+      // Update document title and meta description
+      const t = translations[lang];
+      if (t.doc_title) {
+        document.title = t.doc_title;
+        const titleEl = document.getElementById('docTitle');
+        if (titleEl) titleEl.innerText = t.doc_title;
+      }
+      if (t.doc_desc) {
+        const descEl = document.getElementById('docDescription');
+        if (descEl) descEl.setAttribute('content', t.doc_desc);
+      }
+
+      // Update translatable elements
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) {
+          el.innerHTML = t[key];
+        }
+      });
+
+      // Update active state in buttons
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        const btnLang = btn.getAttribute('data-lang');
+        if (btnLang === lang) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    // Determine initial language: URL query ?lang= -> hash # -> localStorage -> default 'en'
+    (function initLanguage() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryLang = urlParams.get('lang');
+        const hashLang = window.location.hash.replace('#', '').toLowerCase();
+        const storedLang = localStorage.getItem('caveau_policy_lang');
+
+        let targetLang = 'en'; // Default standard is English
+
+        if (queryLang && translations[queryLang.toLowerCase()]) {
+          targetLang = queryLang.toLowerCase();
+        } else if (hashLang && translations[hashLang]) {
+          targetLang = hashLang;
+        } else if (storedLang && translations[storedLang]) {
+          targetLang = storedLang;
+        }
+
+        setLanguage(targetLang);
+      } catch (e) {
+        setLanguage('en');
+      }
+    })();
+  </script>
+</body>
+
+</html>

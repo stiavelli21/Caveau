@@ -143,3 +143,13 @@ Quando modifichi o estendi questa applicazione, devi **SEMPRE rispettare rigoros
   - `NSFaceIDUsageDescription` in `ios/Runner/Info.plist`.
 - **Mantieni la separazione tra UI e Crittografia**: La logica di hashing e derivazione chiavi deve rimanere isolata nei `services/`.
 - **Verifica con i Test**: Dopo ogni modifica a testi o logica, assicurati che la suite `flutter test` venga aggiornata e passi con successo al 100%.
+
+### 3. Cautela Assoluta e Retrocompatibilità su Backup ed Esportazione
+- **Attenzione Critica alle Modifiche**: Tratta qualsiasi modifica alle funzioni di esportazione (`exportEncryptedBackup`), importazione (`importEncryptedBackup`), o serializzazione dei modelli (`VaultItem.toJson` / `fromJson`) con estrema cautela.
+- **Divieto di Invalidare i Backup Esistenti**: Nessuna modifica al codice deve rendere invalidanti o incompatibili i file di backup generati con versioni precedenti dell'app. Rompere la retrocompatibilità causerebbe la perdita irreversibile delle credenziali per gli utenti che ripristinano un vecchio file.
+- **Versioning e Migrazioni Backward-Compatible**:
+  - Se la struttura del payload, l'involucro JSON o la logica di crittografia del backup devono evolvere, incrementa il tag di versione (es. `'caveau_backup': 'v2'`) garantendo che la funzione `importEncryptedBackup` mantenga il supporto completo ai formati legacy (es. `'v1'`).
+  - L'aggiunta o modifica di proprietà nel modello `VaultItem` deve essere tollerante e prevedere fallback/valori predefiniti in `fromJson`, evitando eccezioni durante il parsing di elementi esportati in versioni precedenti.
+  - Non alterare le modalità di verifica dell'integrità (come il checksum SHA-256) per i formati storici senza gestire la compatibilità all'indietro.
+- **Test di Regressione Obbligatori**: In caso di interventi sui moduli di storage o backup, verifica e garantisci tramite test automatizzati che sia i nuovi file di backup sia quelli generati dalle vecchie versioni vengano importati correttamente e senza perdita di dati.
+

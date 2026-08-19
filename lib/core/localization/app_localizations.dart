@@ -240,7 +240,9 @@ abstract class AppLocalizations {
   String get exportBackupDialogTitle;
   String get exportBackupInstructions;
   String get backupPasswordFieldLabel;
+  String get confirmBackupPasswordFieldLabel;
   String get backupPasswordMinCharsError;
+  String get backupPasswordsDoNotMatchError;
   String get backupGeneratedDialogTitle;
   String get backupCopyWarning;
   String get restoreBackupDialogTitle;
@@ -270,6 +272,33 @@ abstract class AppLocalizations {
   // --- Privacy Shield Overlay ---
   String get privacyShieldTitle;
   String get privacyShieldSubtitle;
+
+  // --- Legal, Privacy & Onboarding Security Briefing ---
+  String get onboardingInfoTitle;
+  String get onboardingInfoZeroKnowledgeTitle;
+  String get onboardingInfoZeroKnowledgeDesc;
+  String get onboardingInfoBackupTitle;
+  String get onboardingInfoBackupDesc;
+  String get onboardingInfoFreeAppTitle;
+  String get onboardingInfoFreeAppDesc;
+  String get onboardingInfoOpenSourceTitle;
+  String get onboardingInfoOpenSourceDesc;
+  String get onboardingInfoPrivacyPolicyTitle;
+  String get onboardingInfoPrivacyPolicyDesc;
+  String get onboardingDisclaimerCheckbox;
+  String get openSourceGitHubButton;
+  String get viewPrivacyPolicyButton;
+  String get continueToMasterPinButton;
+
+  String get sectionLegalAndAbout;
+  String get privacyPolicyTileTitle;
+  String get privacyPolicyTileSubtitle;
+  String get openSourceTileTitle;
+  String get openSourceTileSubtitle;
+  String get backupSecurityGuideTileTitle;
+  String get backupSecurityGuideTileSubtitle;
+  String get backupSecurityGuideDialogTitle;
+  String get backupSecurityGuideDialogContent;
 }
 
 /// ============================================================================
@@ -806,7 +835,13 @@ class AppLocalizationsIt extends AppLocalizations {
   String get backupPasswordFieldLabel => '${AppBrandTerms.password} di cifratura backup';
 
   @override
+  String get confirmBackupPasswordFieldLabel => 'Conferma ${AppBrandTerms.password.toLowerCase()} di backup';
+
+  @override
   String get backupPasswordMinCharsError => 'Inserisci una ${AppBrandTerms.password.toLowerCase()} di almeno 6 caratteri';
+
+  @override
+  String get backupPasswordsDoNotMatchError => 'Le ${AppBrandTerms.password.toLowerCase()} di backup non corrispondono';
 
   @override
   String get backupGeneratedDialogTitle => 'Backup Cifrato Generato';
@@ -891,6 +926,81 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get privacyShieldSubtitle => 'Schermata oscurata per la tua privacy';
+
+  @override
+  String get onboardingInfoTitle => 'Prima di iniziare: Informazioni Importanti';
+
+  @override
+  String get onboardingInfoZeroKnowledgeTitle => '100% Offline e Zero-Knowledge';
+
+  @override
+  String get onboardingInfoZeroKnowledgeDesc => 'Tutti i tuoi dati restano esclusivamente su questo dispositivo e vengono cifrati via hardware (${AppBrandTerms.aes256}). Nessun server remoto e nessun dato inviato all\'esterno.';
+
+  @override
+  String get onboardingInfoBackupTitle => 'Nessun Recupero ${AppBrandTerms.pin} & Backup Vitali';
+
+  @override
+  String get onboardingInfoBackupDesc => 'Se dimentichi il ${AppBrandTerms.pinMaster} o perdi il dispositivo, nessuno potrà recuperare i tuoi dati. Esporta regolarmente copie di backup cifrate dalle impostazioni.';
+
+  @override
+  String get onboardingInfoFreeAppTitle => '100% Gratuita e Senza Costi';
+
+  @override
+  String get onboardingInfoFreeAppDesc => '${AppBrandTerms.appName} è un\'applicazione completamente gratuita: non include abbonamenti, acquisti in-app, pubblicità né costi nascosti.';
+
+  @override
+  String get onboardingInfoOpenSourceTitle => 'Codice Open Source su ${AppBrandTerms.github}';
+
+  @override
+  String get onboardingInfoOpenSourceDesc => 'Il codice di ${AppBrandTerms.appName} è pubblico, trasparente e verificabile da chiunque su ${AppBrandTerms.github}.';
+
+  @override
+  String get onboardingInfoPrivacyPolicyTitle => 'Privacy Policy e Termini';
+
+  @override
+  String get onboardingInfoPrivacyPolicyDesc => 'Zero raccolta dati, zero telemetria e zero pubblicità. Consulta l\'informativa completa.';
+
+  @override
+  String get onboardingDisclaimerCheckbox => 'Ho compreso che sono l\'unico custode del mio ${AppBrandTerms.pinMaster} e dei miei backup.';
+
+  @override
+  String get openSourceGitHubButton => 'Vedi su ${AppBrandTerms.github}';
+
+  @override
+  String get viewPrivacyPolicyButton => 'Privacy Policy';
+
+  @override
+  String get continueToMasterPinButton => 'Continua e Crea ${AppBrandTerms.pinMaster}';
+
+  @override
+  String get sectionLegalAndAbout => 'NOTE LEGALI & TRASPARENZA';
+
+  @override
+  String get privacyPolicyTileTitle => 'Informativa sulla Privacy';
+
+  @override
+  String get privacyPolicyTileSubtitle => AppBrandTerms.privacyPolicyHost;
+
+  @override
+  String get openSourceTileTitle => 'Codice Sorgente Open Source';
+
+  @override
+  String get openSourceTileSubtitle => '${AppBrandTerms.github} - ${AppBrandTerms.githubRepoDisplay}';
+
+  @override
+  String get backupSecurityGuideTileTitle => 'Guida Sicurezza e Backup';
+
+  @override
+  String get backupSecurityGuideTileSubtitle => 'Scopri come funzionano la crittografia e i backup';
+
+  @override
+  String get backupSecurityGuideDialogTitle => 'Sicurezza e Backup in ${AppBrandTerms.appName}';
+
+  @override
+  String get backupSecurityGuideDialogContent =>
+      '1. Architettura Offline: ${AppBrandTerms.appName} non usa server. I dati sono protetti da ${AppBrandTerms.androidKeystore} con crittografia ${AppBrandTerms.aes256}.\n\n'
+      '2. Nessun Recupero: Non esiste una funzione di recupero password. Solo tu conosci il tuo ${AppBrandTerms.pinMaster}.\n\n'
+      '3. Backup Cifrati: Il file di backup esportato è cifrato con password e protetto da hash ${AppBrandTerms.sha256}. Salvalo su una chiavetta o sul tuo cloud personale per non perdere mai le tue credenziali.';
 }
 
 /// ============================================================================
@@ -1427,7 +1537,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupPasswordFieldLabel => 'Backup encryption ${AppBrandTerms.password.toLowerCase()}';
 
   @override
+  String get confirmBackupPasswordFieldLabel => 'Confirm backup ${AppBrandTerms.password.toLowerCase()}';
+
+  @override
   String get backupPasswordMinCharsError => 'Enter a ${AppBrandTerms.password.toLowerCase()} with at least 6 characters';
+
+  @override
+  String get backupPasswordsDoNotMatchError => 'Backup ${AppBrandTerms.password.toLowerCase()}s do not match';
 
   @override
   String get backupGeneratedDialogTitle => 'Encrypted Backup Generated';
@@ -1512,6 +1628,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyShieldSubtitle => 'Screen obscured for your privacy';
+
+  @override
+  String get onboardingInfoTitle => 'Before You Begin: Important Information';
+
+  @override
+  String get onboardingInfoZeroKnowledgeTitle => '100% Offline & Zero-Knowledge';
+
+  @override
+  String get onboardingInfoZeroKnowledgeDesc => 'All your data remains exclusively on this device and is hardware-encrypted (${AppBrandTerms.aes256}). No remote servers, no data transmitted.';
+
+  @override
+  String get onboardingInfoBackupTitle => 'No ${AppBrandTerms.pin} Recovery & Vital Backups';
+
+  @override
+  String get onboardingInfoBackupDesc => 'If you forget your ${AppBrandTerms.masterPin} or lose your device, no one can recover your data. Regularly export encrypted backups from Settings.';
+
+  @override
+  String get onboardingInfoFreeAppTitle => '100% Free & No In-App Purchases';
+
+  @override
+  String get onboardingInfoFreeAppDesc => '${AppBrandTerms.appName} is completely free to use: no subscriptions, no in-app purchases, no advertisements, and no hidden fees.';
+
+  @override
+  String get onboardingInfoOpenSourceTitle => 'Open Source on ${AppBrandTerms.github}';
+
+  @override
+  String get onboardingInfoOpenSourceDesc => '${AppBrandTerms.appName} code is public, transparent, and auditable by anyone on ${AppBrandTerms.github}.';
+
+  @override
+  String get onboardingInfoPrivacyPolicyTitle => 'Privacy Policy & Terms';
+
+  @override
+  String get onboardingInfoPrivacyPolicyDesc => 'Zero data collection, zero telemetry, and zero ads. View our complete policy.';
+
+  @override
+  String get onboardingDisclaimerCheckbox => 'I understand that I am the sole custodian of my ${AppBrandTerms.masterPin} and backups.';
+
+  @override
+  String get openSourceGitHubButton => 'View on ${AppBrandTerms.github}';
+
+  @override
+  String get viewPrivacyPolicyButton => 'Privacy Policy';
+
+  @override
+  String get continueToMasterPinButton => 'Continue to Create ${AppBrandTerms.masterPin}';
+
+  @override
+  String get sectionLegalAndAbout => 'LEGAL & TRANSPARENCY';
+
+  @override
+  String get privacyPolicyTileTitle => 'Privacy Policy';
+
+  @override
+  String get privacyPolicyTileSubtitle => AppBrandTerms.privacyPolicyHost;
+
+  @override
+  String get openSourceTileTitle => 'Open Source Code';
+
+  @override
+  String get openSourceTileSubtitle => '${AppBrandTerms.github} - ${AppBrandTerms.githubRepoDisplay}';
+
+  @override
+  String get backupSecurityGuideTileTitle => 'Security & Backup Guide';
+
+  @override
+  String get backupSecurityGuideTileSubtitle => 'Learn how encryption and backups work';
+
+  @override
+  String get backupSecurityGuideDialogTitle => 'Security & Backups in ${AppBrandTerms.appName}';
+
+  @override
+  String get backupSecurityGuideDialogContent =>
+      '1. Offline Architecture: ${AppBrandTerms.appName} uses no servers. Data is protected by ${AppBrandTerms.androidKeystore} with ${AppBrandTerms.aes256} encryption.\n\n'
+      '2. No Recovery: There is no password reset mechanism. Only you know your ${AppBrandTerms.masterPin}.\n\n'
+      '3. Encrypted Backups: Exported backup files are password-encrypted and protected by ${AppBrandTerms.sha256} hash. Save it to a USB drive or personal cloud to prevent data loss.';
 }
 
 /// ============================================================================
@@ -2048,7 +2239,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupPasswordFieldLabel => 'Contraseña de cifrado de la copia';
 
   @override
+  String get confirmBackupPasswordFieldLabel => 'Confirmar contraseña de la copia';
+
+  @override
   String get backupPasswordMinCharsError => 'Introduce una contraseña de al menos 6 caracteres';
+
+  @override
+  String get backupPasswordsDoNotMatchError => 'Las contraseñas de la copia no coinciden';
 
   @override
   String get backupGeneratedDialogTitle => 'Copia de Seguridad Cifrada Generada';
@@ -2133,6 +2330,81 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get privacyShieldSubtitle => 'Pantalla oculta por tu privacidad';
+
+  @override
+  String get onboardingInfoTitle => 'Antes de empezar: Información Importante';
+
+  @override
+  String get onboardingInfoZeroKnowledgeTitle => '100% Offline y Zero-Knowledge';
+
+  @override
+  String get onboardingInfoZeroKnowledgeDesc => 'Todos tus datos permanecen exclusivamente en este dispositivo con cifrado por hardware (${AppBrandTerms.aes256}). Sin servidores remotos ni transmisión de datos.';
+
+  @override
+  String get onboardingInfoBackupTitle => 'Sin Recuperación de ${AppBrandTerms.pin} y Copias Vitales';
+
+  @override
+  String get onboardingInfoBackupDesc => 'Si olvidas tu ${AppBrandTerms.masterPin} o pierdes tu dispositivo, nadie podrá recuperar tus datos. Exporta regularmente copias de seguridad cifradas desde ajustes.';
+
+  @override
+  String get onboardingInfoFreeAppTitle => '100% Gratuita y Sin Costes';
+
+  @override
+  String get onboardingInfoFreeAppDesc => '${AppBrandTerms.appName} es totalmente gratuita: no incluye suscripciones, compras integradas, anuncios ni costes ocultos.';
+
+  @override
+  String get onboardingInfoOpenSourceTitle => 'Código Open Source en ${AppBrandTerms.github}';
+
+  @override
+  String get onboardingInfoOpenSourceDesc => 'El código de ${AppBrandTerms.appName} es público, transparente y auditable por cualquiera en ${AppBrandTerms.github}.';
+
+  @override
+  String get onboardingInfoPrivacyPolicyTitle => 'Política de Privacidad y Términos';
+
+  @override
+  String get onboardingInfoPrivacyPolicyDesc => 'Cero recolección de datos, cero telemetría y cero anuncios. Consulta la política completa.';
+
+  @override
+  String get onboardingDisclaimerCheckbox => 'Entiendo que soy el único custodio de mi ${AppBrandTerms.masterPin} y de mis copias de seguridad.';
+
+  @override
+  String get openSourceGitHubButton => 'Ver en ${AppBrandTerms.github}';
+
+  @override
+  String get viewPrivacyPolicyButton => 'Política de Privacidad';
+
+  @override
+  String get continueToMasterPinButton => 'Continuar y Crear ${AppBrandTerms.masterPin}';
+
+  @override
+  String get sectionLegalAndAbout => 'LEGAL Y TRANSPARENCIA';
+
+  @override
+  String get privacyPolicyTileTitle => 'Política de Privacidad';
+
+  @override
+  String get privacyPolicyTileSubtitle => AppBrandTerms.privacyPolicyHost;
+
+  @override
+  String get openSourceTileTitle => 'Código Fuente Open Source';
+
+  @override
+  String get openSourceTileSubtitle => '${AppBrandTerms.github} - ${AppBrandTerms.githubRepoDisplay}';
+
+  @override
+  String get backupSecurityGuideTileTitle => 'Guía de Seguridad y Copias de Seguridad';
+
+  @override
+  String get backupSecurityGuideTileSubtitle => 'Aprende cómo funcionan el cifrado y las copias';
+
+  @override
+  String get backupSecurityGuideDialogTitle => 'Seguridad y Copias en ${AppBrandTerms.appName}';
+
+  @override
+  String get backupSecurityGuideDialogContent =>
+      '1. Arquitectura Offline: ${AppBrandTerms.appName} no usa servidores. Los datos están protegidos por ${AppBrandTerms.androidKeystore} con cifrado ${AppBrandTerms.aes256}.\n\n'
+      '2. Sin Recuperación: No existe mecanismo de recuperación. Solo tú conoces tu ${AppBrandTerms.masterPin}.\n\n'
+      '3. Copias Cifradas: El archivo exportado está cifrado con contraseña y protegido con ${AppBrandTerms.sha256}. Guárdalo en un pendrive o nube personal para evitar pérdidas.';
 }
 
 /// ============================================================================
@@ -2669,7 +2941,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get backupPasswordFieldLabel => 'Mot de passe de chiffrement';
 
   @override
+  String get confirmBackupPasswordFieldLabel => 'Confirmer le mot de passe de sauvegarde';
+
+  @override
   String get backupPasswordMinCharsError => 'Saisissez un mot de passe d\'au moins 6 caractères';
+
+  @override
+  String get backupPasswordsDoNotMatchError => 'Les mots de passe de sauvegarde ne correspondent pas';
 
   @override
   String get backupGeneratedDialogTitle => 'Sauvegarde Chiffrée Générée';
@@ -2754,6 +3032,81 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyShieldSubtitle => 'Écran masqué pour votre confidentialité';
+
+  @override
+  String get onboardingInfoTitle => 'Avant de commencer : Informations Importantes';
+
+  @override
+  String get onboardingInfoZeroKnowledgeTitle => '100% Hors-ligne & Zero-Knowledge';
+
+  @override
+  String get onboardingInfoZeroKnowledgeDesc => 'Toutes vos données restent exclusivement sur cet appareil et sont chiffrées au niveau matériel (${AppBrandTerms.aes256}). Aucun serveur distant, aucune donnée transmise.';
+
+  @override
+  String get onboardingInfoBackupTitle => 'Aucune Récupération de ${AppBrandTerms.pin} & Sauvegardes Vitales';
+
+  @override
+  String get onboardingInfoBackupDesc => 'Si vous oubliez votre ${AppBrandTerms.masterPin} ou perdez votre appareil, personne ne peut récupérer vos données. Exportez régulièrement des sauvegardes chiffrées depuis les paramètres.';
+
+  @override
+  String get onboardingInfoFreeAppTitle => '100% Gratuite & Sans Frais';
+
+  @override
+  String get onboardingInfoFreeAppDesc => '${AppBrandTerms.appName} est entièrement gratuite : aucun abonnement, aucun achat intégré, aucune publicité ni frais cachés.';
+
+  @override
+  String get onboardingInfoOpenSourceTitle => 'Code Open Source sur ${AppBrandTerms.github}';
+
+  @override
+  String get onboardingInfoOpenSourceDesc => 'Le code de ${AppBrandTerms.appName} est public, transparent et vérifiable par tous sur ${AppBrandTerms.github}.';
+
+  @override
+  String get onboardingInfoPrivacyPolicyTitle => 'Politique de Confidentialité & Conditions';
+
+  @override
+  String get onboardingInfoPrivacyPolicyDesc => 'Zéro collecte de données, zéro télémétrie et zéro publicité. Consultez la politique complète.';
+
+  @override
+  String get onboardingDisclaimerCheckbox => 'Je comprends que je suis le seul gardien de mon ${AppBrandTerms.masterPin} et de mes sauvegardes.';
+
+  @override
+  String get openSourceGitHubButton => 'Voir sur ${AppBrandTerms.github}';
+
+  @override
+  String get viewPrivacyPolicyButton => 'Politique de Confidentialité';
+
+  @override
+  String get continueToMasterPinButton => 'Continuer et Créer le ${AppBrandTerms.masterPin}';
+
+  @override
+  String get sectionLegalAndAbout => 'MENTIONS LÉGALES & TRANSPARENCE';
+
+  @override
+  String get privacyPolicyTileTitle => 'Politique de Confidentialité';
+
+  @override
+  String get privacyPolicyTileSubtitle => AppBrandTerms.privacyPolicyHost;
+
+  @override
+  String get openSourceTileTitle => 'Code Source Open Source';
+
+  @override
+  String get openSourceTileSubtitle => '${AppBrandTerms.github} - ${AppBrandTerms.githubRepoDisplay}';
+
+  @override
+  String get backupSecurityGuideTileTitle => 'Guide de Sécurité et Sauvegardes';
+
+  @override
+  String get backupSecurityGuideTileSubtitle => 'Comprendre le fonctionnement du chiffrement et des sauvegardes';
+
+  @override
+  String get backupSecurityGuideDialogTitle => 'Sécurité et Sauvegardes dans ${AppBrandTerms.appName}';
+
+  @override
+  String get backupSecurityGuideDialogContent =>
+      '1. Architecture Hors-ligne : ${AppBrandTerms.appName} n\'utilise aucun serveur. Les données sont protégées par ${AppBrandTerms.androidKeystore} avec chiffrement ${AppBrandTerms.aes256}.\n\n'
+      '2. Aucune Récupération : Il n\'existe aucune réinitialisation possible. Vous seul connaissez votre ${AppBrandTerms.masterPin}.\n\n'
+      '3. Sauvegardes Chiffrées : Le fichier exporté est chiffré par mot de passe et protégé par hachage ${AppBrandTerms.sha256}. Enregistrez-le sur clé USB ou cloud personnel.';
 }
 
 /// ============================================================================
@@ -3290,7 +3643,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get backupPasswordFieldLabel => 'Backup-Verschlüsselungspasswort';
 
   @override
+  String get confirmBackupPasswordFieldLabel => 'Backup-${AppBrandTerms.password} bestätigen';
+
+  @override
   String get backupPasswordMinCharsError => 'Geben Sie ein Passwort mit mindestens 6 Zeichen ein';
+
+  @override
+  String get backupPasswordsDoNotMatchError => 'Die Backup-${AppBrandTerms.password}er stimmen nicht überein';
 
   @override
   String get backupGeneratedDialogTitle => 'Verschlüsseltes Backup Erstellt';
@@ -3375,6 +3734,81 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get privacyShieldSubtitle => 'Bildschirm zum Schutz Ihrer Privatsphäre verdeckt';
+
+  @override
+  String get onboardingInfoTitle => 'Bevor Sie beginnen: Wichtige Informationen';
+
+  @override
+  String get onboardingInfoZeroKnowledgeTitle => '100% Offline & Zero-Knowledge';
+
+  @override
+  String get onboardingInfoZeroKnowledgeDesc => 'Alle Ihre Daten verbleiben ausschließlich auf diesem Gerät und sind hardwareverschlüsselt (${AppBrandTerms.aes256}). Keine Remote-Server, keine Datenübertragung.';
+
+  @override
+  String get onboardingInfoBackupTitle => 'Keine ${AppBrandTerms.pin}-Wiederherstellung & Wichtige Backups';
+
+  @override
+  String get onboardingInfoBackupDesc => 'Wenn Sie Ihre ${AppBrandTerms.masterPin} vergessen oder Ihr Gerät verlieren, kann niemand Ihre Daten wiederherstellen. Exportieren Sie regelmäßig verschlüsselte Backups in den Einstellungen.';
+
+  @override
+  String get onboardingInfoFreeAppTitle => '100% Kostenlos & Ohne In-App-Käufe';
+
+  @override
+  String get onboardingInfoFreeAppDesc => '${AppBrandTerms.appName} ist vollkommen kostenlos: keine Abonnements, keine In-App-Käufe, keine Werbung und keine versteckten Kosten.';
+
+  @override
+  String get onboardingInfoOpenSourceTitle => 'Open Source auf ${AppBrandTerms.github}';
+
+  @override
+  String get onboardingInfoOpenSourceDesc => 'Der Code von ${AppBrandTerms.appName} ist öffentlich, transparent und für jedermann auf ${AppBrandTerms.github} einsehbar.';
+
+  @override
+  String get onboardingInfoPrivacyPolicyTitle => 'Datenschutzerklärung & Bedingungen';
+
+  @override
+  String get onboardingInfoPrivacyPolicyDesc => 'Keine Datenerfassung, keine Telemetrie und keine Werbung. Lesen Sie die vollständige Erklärung.';
+
+  @override
+  String get onboardingDisclaimerCheckbox => 'Ich verstehe, dass ich der alleinige Hüter meiner ${AppBrandTerms.masterPin} und meiner Backups bin.';
+
+  @override
+  String get openSourceGitHubButton => 'Auf ${AppBrandTerms.github} ansehen';
+
+  @override
+  String get viewPrivacyPolicyButton => 'Datenschutzerklärung';
+
+  @override
+  String get continueToMasterPinButton => 'Weiter zur Erstellung der ${AppBrandTerms.masterPin}';
+
+  @override
+  String get sectionLegalAndAbout => 'RECHTLICHES & TRANSPARENZ';
+
+  @override
+  String get privacyPolicyTileTitle => 'Datenschutzerklärung';
+
+  @override
+  String get privacyPolicyTileSubtitle => AppBrandTerms.privacyPolicyHost;
+
+  @override
+  String get openSourceTileTitle => 'Open-Source-Quellcode';
+
+  @override
+  String get openSourceTileSubtitle => '${AppBrandTerms.github} - ${AppBrandTerms.githubRepoDisplay}';
+
+  @override
+  String get backupSecurityGuideTileTitle => 'Sicherheits- & Backup-Leitfaden';
+
+  @override
+  String get backupSecurityGuideTileSubtitle => 'Erfahren Sie, wie Verschlüsselung und Backups funktionieren';
+
+  @override
+  String get backupSecurityGuideDialogTitle => 'Sicherheit & Backups in ${AppBrandTerms.appName}';
+
+  @override
+  String get backupSecurityGuideDialogContent =>
+      '1. Offline-Architektur: ${AppBrandTerms.appName} verwendet keine Server. Daten werden durch ${AppBrandTerms.androidKeystore} mit ${AppBrandTerms.aes256}-Verschlüsselung geschützt.\n\n'
+      '2. Keine Wiederherstellung: Es gibt keine Möglichkeit zur Passwort-Zurücksetzung. Nur Sie kennen Ihre ${AppBrandTerms.masterPin}.\n\n'
+      '3. Verschlüsselte Backups: Die exportierte Datei ist passwortverschlüsselt und durch ${AppBrandTerms.sha256}-Hash geschützt. Speichern Sie sie auf einem USB-Stick oder in Ihrer privaten Cloud.';
 }
 
 /// ============================================================================

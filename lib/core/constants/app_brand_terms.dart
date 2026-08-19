@@ -47,4 +47,14 @@ class AppBrandTerms {
   static const String id = 'ID';
   static const String iban = 'IBAN';
   static const String swiftBic = 'SWIFT / BIC';
+
+  /// Piattaforme e community open source
+  static const String github = 'GitHub';
+
+  /// Link ufficiali e documentazione
+  static const String privacyPolicyUrl = 'https://www.stiavelli.net/caveau/privacy-policy.html';
+  static const String privacyPolicyHost = 'www.stiavelli.net/caveau/privacy-policy.html';
+  static const String githubRepoUrl = 'https://github.com/stiavelli21/Caveau';
+  static const String githubRepoDisplay = 'github.com/stiavelli21/Caveau';
+  static const String developerWebsiteUrl = 'https://www.stiavelli.net';
 }

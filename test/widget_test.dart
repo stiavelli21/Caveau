@@ -586,6 +586,122 @@ void main() {
     expect(find.text('Esporta Backup Cifrato'), findsOneWidget);
     expect(find.text('Ripristina Backup'), findsOneWidget);
   });
+
+  testWidgets('OnboardingScreen renders information briefing card, GitHub button, Privacy Policy button and checkbox', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final authService = AuthService(storageService: mockStorage);
+    final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: const OnboardingScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify LanguageSelectorButton is present
+    expect(find.byType(LanguageSelectorButton), findsOneWidget);
+
+    // Verify Briefing info card content
+    expect(find.text('Prima di iniziare: Informazioni Importanti'), findsOneWidget);
+    expect(find.text('100% Offline e Zero-Knowledge'), findsOneWidget);
+    expect(find.text('Nessun Recupero PIN & Backup Vitali'), findsOneWidget);
+    expect(find.text('100% Gratuita e Senza Costi'), findsOneWidget);
+    expect(find.text('Codice Open Source su GitHub'), findsOneWidget);
+    expect(find.text('Privacy Policy e Termini'), findsOneWidget);
+
+    // Verify Buttons inside info card
+    expect(find.text('Vedi su GitHub'), findsOneWidget);
+    expect(find.text('Privacy Policy'), findsOneWidget);
+
+    // Verify Disclaimer Checkbox
+    expect(find.byType(Checkbox), findsOneWidget);
+    expect(find.text('Ho compreso che sono l\'unico custode del mio PIN Master e dei miei backup.'), findsOneWidget);
+
+    // Ensure checkbox is visible in viewport before tapping
+    await tester.ensureVisible(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+
+    // Verify toggle checkbox works
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    final checkbox = tester.widget<Checkbox>(find.byType(Checkbox));
+    expect(checkbox.value, isTrue);
+  });
+
+  testWidgets('SettingsScreen renders Legal & Transparency section with Privacy Policy and Open Source tiles', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final authService = AuthService(storageService: mockStorage);
+    final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: const SettingsScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.scrollUntilVisible(
+      find.text('NOTE LEGALI & TRASPARENZA'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('NOTE LEGALI & TRASPARENZA'), findsOneWidget);
+    expect(find.text('Informativa sulla Privacy'), findsOneWidget);
+    expect(find.text('Codice Sorgente Open Source'), findsOneWidget);
+    expect(find.text('Guida Sicurezza e Backup'), findsOneWidget);
+  });
+
+  testWidgets('SettingsScreen export dialog prompts for password twice and validates matching', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final authService = AuthService(storageService: mockStorage);
+    final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: const SettingsScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.scrollUntilVisible(
+      find.text('Esporta Backup Cifrato'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    await tester.tap(find.text('Esporta Backup Cifrato'));
+    await tester.pumpAndSettle();
+
+    // Verify dialog has 2 text fields (Password and Confirm Password)
+    expect(find.text('Password di cifratura backup'), findsOneWidget);
+    expect(find.text('Conferma password di backup'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(2));
+
+    // Type non-matching passwords and try to generate
+    await tester.enterText(find.byType(TextField).at(0), '123456');
+    await tester.enterText(find.byType(TextField).at(1), '654321');
+    await tester.tap(find.text('Genera'));
+    await tester.pumpAndSettle();
+
+    // Verify error message for mismatch
+    expect(find.text('Le password di backup non corrispondono'), findsOneWidget);
+  });
 }
 
 class _MockTestAuthService extends AuthService {

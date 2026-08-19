@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/app_brand_terms.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../providers/auth_provider.dart';
@@ -193,6 +195,8 @@ class SettingsScreen extends StatelessWidget {
   void _showExportDialog(BuildContext context) {
     final l10n = context.l10n;
     final pwdCtrl = TextEditingController();
+    final confirmPwdCtrl = TextEditingController();
+    bool obscurePwd = true;
     String? error;
 
     showDialog(
@@ -209,28 +213,50 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.cloud_upload_outlined, color: AppColors.successLight, size: 22),
                 const SizedBox(width: 10),
-                Text(l10n.exportBackupDialogTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                Expanded(
+                  child: Text(l10n.exportBackupDialogTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                ),
               ],
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.exportBackupInstructions,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: pwdCtrl,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: l10n.backupPasswordFieldLabel),
-                ),
-                if (error != null) ...[
-                  const SizedBox(height: 10),
-                  Text(error!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.exportBackupInstructions,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: pwdCtrl,
+                    obscureText: obscurePwd,
+                    decoration: InputDecoration(
+                      labelText: l10n.backupPasswordFieldLabel,
+                      prefixIcon: const Icon(Icons.lock_outline_rounded),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePwd ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () => setState(() => obscurePwd = !obscurePwd),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: confirmPwdCtrl,
+                    obscureText: obscurePwd,
+                    decoration: InputDecoration(
+                      labelText: l10n.confirmBackupPasswordFieldLabel,
+                      prefixIcon: const Icon(Icons.lock_reset_rounded),
+                    ),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: 10),
+                    Text(error!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+                  ],
                 ],
-              ],
+              ),
             ),
             actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
@@ -255,8 +281,15 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       onPressed: () async {
                         final pwd = pwdCtrl.text.trim();
+                        final confirmPwd = confirmPwdCtrl.text.trim();
+
                         if (pwd.length < 6) {
                           setState(() => error = l10n.backupPasswordMinCharsError);
+                          return;
+                        }
+
+                        if (pwd != confirmPwd) {
+                          setState(() => error = l10n.backupPasswordsDoNotMatchError);
                           return;
                         }
 
@@ -746,6 +779,44 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
+              // Legal, Privacy & Open Source
+              _buildSectionHeader(l10n.sectionLegalAndAbout),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.policy_outlined, color: AppColors.primaryLight),
+                      title: Text(l10n.privacyPolicyTileTitle, style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(l10n.privacyPolicyTileSubtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      trailing: const Icon(Icons.open_in_new_rounded, color: AppColors.textSecondary, size: 18),
+                      onTap: () => _openExternalUrl(AppBrandTerms.privacyPolicyUrl),
+                    ),
+                    const Divider(height: 1, indent: 56, color: AppColors.border),
+                    ListTile(
+                      leading: const Icon(Icons.code_rounded, color: AppColors.info),
+                      title: Text(l10n.openSourceTileTitle, style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(l10n.openSourceTileSubtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      trailing: const Icon(Icons.open_in_new_rounded, color: AppColors.textSecondary, size: 18),
+                      onTap: () => _openExternalUrl(AppBrandTerms.githubRepoUrl),
+                    ),
+                    const Divider(height: 1, indent: 56, color: AppColors.border),
+                    ListTile(
+                      leading: const Icon(Icons.help_outline_rounded, color: AppColors.successLight),
+                      title: Text(l10n.backupSecurityGuideTileTitle, style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text(l10n.backupSecurityGuideTileSubtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                      onTap: () => _showSecurityGuideDialog(context),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // Danger Zone
               _buildSectionHeader(l10n.sectionDangerZone),
               Container(
@@ -898,6 +969,52 @@ class SettingsScreen extends StatelessWidget {
       title: Text(title, style: TextStyle(color: isSelected ? AppColors.primaryLight : AppColors.textPrimary)),
       trailing: isSelected ? const Icon(Icons.check_rounded, color: AppColors.primaryLight) : null,
       onTap: () => onSelect(value),
+    );
+  }
+
+  Future<void> _openExternalUrl(String urlString) async {
+    final uri = Uri.parse(urlString);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
+  void _showSecurityGuideDialog(BuildContext context) {
+    final l10n = context.l10n;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.shield_outlined, color: AppColors.success, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                l10n.backupSecurityGuideDialogTitle,
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            l10n.backupSecurityGuideDialogContent,
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5, height: 1.45),
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.closeButton),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -157,6 +157,9 @@ void main() {
       expect(AppBrandTerms.apiKey, equals('API Key'));
       expect(AppBrandTerms.androidKeystore, equals('Android Keystore'));
       expect(AppBrandTerms.iosKeychain, equals('iOS Keychain'));
+      expect(AppBrandTerms.github, equals('GitHub'));
+      expect(AppBrandTerms.privacyPolicyUrl, contains('privacy-policy.html'));
+      expect(AppBrandTerms.githubRepoUrl, contains('Caveau'));
     });
 
     test('AppLocalizationsIt has correct Italian translations and uses brand terms', () {
@@ -168,6 +171,13 @@ void main() {
       expect(it.enterMasterPinPrompt, contains('PIN Master'));
       expect(it.settingsTitle, equals('Impostazioni di Sicurezza'));
       expect(it.languageOptionLabel, equals('Lingua'));
+      expect(it.sectionLegalAndAbout, equals('NOTE LEGALI & TRASPARENZA'));
+      expect(it.privacyPolicyTileTitle, equals('Informativa sulla Privacy'));
+      expect(it.openSourceTileTitle, equals('Codice Sorgente Open Source'));
+      expect(it.onboardingInfoTitle, contains('Informazioni Importanti'));
+      expect(it.onboardingInfoFreeAppTitle, contains('Gratuita'));
+      expect(it.confirmBackupPasswordFieldLabel, contains('Conferma'));
+      expect(it.backupPasswordsDoNotMatchError, contains('non corrispondono'));
       expect(it.categoryDisplayName(VaultCategory.login), contains('Password'));
     });
 
@@ -180,6 +190,13 @@ void main() {
       expect(en.enterMasterPinPrompt, contains('Master PIN'));
       expect(en.settingsTitle, equals('Security Settings'));
       expect(en.languageOptionLabel, equals('Language'));
+      expect(en.sectionLegalAndAbout, equals('LEGAL & TRANSPARENCY'));
+      expect(en.privacyPolicyTileTitle, equals('Privacy Policy'));
+      expect(en.openSourceTileTitle, equals('Open Source Code'));
+      expect(en.onboardingInfoTitle, contains('Important Information'));
+      expect(en.onboardingInfoFreeAppTitle, contains('Free'));
+      expect(en.confirmBackupPasswordFieldLabel, contains('Confirm'));
+      expect(en.backupPasswordsDoNotMatchError, contains('do not match'));
       expect(en.categoryDisplayName(VaultCategory.login), contains('Password'));
     });
 

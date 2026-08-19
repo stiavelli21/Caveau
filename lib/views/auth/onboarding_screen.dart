@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/app_brand_terms.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../providers/auth_provider.dart';
@@ -19,6 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final TextEditingController _confirmPinController = TextEditingController();
   bool _obscurePin = true;
   bool _enableBiometrics = true;
+  bool _disclaimerAccepted = false;
   String? _error;
 
   @override
@@ -28,10 +31,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  Future<void> _openExternalUrl(String urlString) async {
+    final uri = Uri.parse(urlString);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // Ignora silenziosamente errori di apertura URL
+    }
+  }
+
   void _submit() async {
     final l10n = context.l10n;
     final pin = _pinController.text.trim();
     final confirm = _confirmPinController.text.trim();
+
+    if (!_disclaimerAccepted) {
+      setState(() {
+        _error = l10n.onboardingDisclaimerCheckbox;
+      });
+      return;
+    }
 
     if (pin.length < 4) {
       setState(() {
@@ -88,11 +107,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     // Vault Safe Icon
                     const Center(
                       child: VaultLogo(
-                        size: 96,
+                        size: 88,
                         showGlow: true,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     Text(
                       l10n.welcomeToCaveau,
                       textAlign: TextAlign.center,
@@ -113,38 +132,181 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    // Security info box
+                    const SizedBox(height: 24),
+
+                    // ============================================================
+                    // WIDGET INFORMATIVO: ARCHITETTURA, BACKUP, GITHUB E PRIVACY
+                    // ============================================================
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: AppColors.border),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.lock_clock_rounded,
-                            color: AppColors.success,
-                            size: 24,
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.info_outline_rounded,
+                                color: AppColors.primaryLight,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  l10n.onboardingInfoTitle,
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              l10n.hardwareSecurityNotice,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 13,
-                                height: 1.3,
+                          const SizedBox(height: 16),
+
+                          // 1. 100% Offline & Zero-Knowledge
+                          _buildInfoItem(
+                            icon: Icons.shield_outlined,
+                            iconColor: AppColors.success,
+                            title: l10n.onboardingInfoZeroKnowledgeTitle,
+                            description: l10n.onboardingInfoZeroKnowledgeDesc,
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 2. Backup & Nessun Recupero Password
+                          _buildInfoItem(
+                            icon: Icons.cloud_off_rounded,
+                            iconColor: AppColors.warning,
+                            title: l10n.onboardingInfoBackupTitle,
+                            description: l10n.onboardingInfoBackupDesc,
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 3. 100% Gratuita e Senza Costi
+                          _buildInfoItem(
+                            icon: Icons.card_giftcard_rounded,
+                            iconColor: AppColors.primaryLight,
+                            title: l10n.onboardingInfoFreeAppTitle,
+                            description: l10n.onboardingInfoFreeAppDesc,
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 4. Open Source su GitHub
+                          _buildInfoItem(
+                            icon: Icons.code_rounded,
+                            iconColor: AppColors.info,
+                            title: l10n.onboardingInfoOpenSourceTitle,
+                            description: l10n.onboardingInfoOpenSourceDesc,
+                            actionWidget: Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  visualDensity: VisualDensity.compact,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                                label: Text(
+                                  l10n.openSourceGitHubButton,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                                onPressed: () => _openExternalUrl(AppBrandTerms.githubRepoUrl),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 4. Privacy Policy & Termini
+                          _buildInfoItem(
+                            icon: Icons.policy_outlined,
+                            iconColor: AppColors.info,
+                            title: l10n.onboardingInfoPrivacyPolicyTitle,
+                            description: l10n.onboardingInfoPrivacyPolicyDesc,
+                            actionWidget: Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  visualDensity: VisualDensity.compact,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                                label: Text(
+                                  l10n.viewPrivacyPolicyButton,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                                onPressed: () => _openExternalUrl(AppBrandTerms.privacyPolicyUrl),
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    // Master PIN Input
+
+                    const SizedBox(height: 24),
+
+                    // ============================================================
+                    // CHECKBOX DI CONSAPEVOLEZZA E PRESA VISIONE
+                    // ============================================================
+                    InkWell(
+                      onTap: () => setState(() => _disclaimerAccepted = !_disclaimerAccepted),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _disclaimerAccepted
+                              ? AppColors.primary.withValues(alpha: 0.12)
+                              : AppColors.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: _disclaimerAccepted ? AppColors.primary : AppColors.border,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Checkbox(
+                              value: _disclaimerAccepted,
+                              activeColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              onChanged: (val) => setState(() => _disclaimerAccepted = val ?? false),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Text(
+                                  l10n.onboardingDisclaimerCheckbox,
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ============================================================
+                    // CREAZIONE MASTER PIN
+                    // ============================================================
                     Text(
                       l10n.createMasterPinTitle,
                       style: const TextStyle(
@@ -204,7 +366,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ],
                     const SizedBox(height: 24),
-                    // Biometrics Switch (if available)
+
+                    // Biometrics Switch (se supportato)
                     if (authProvider.isBiometricSupported)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -240,7 +403,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ),
                     const SizedBox(height: 32),
-                    // Submit Button
+
+                    // Inizializza Vault
                     ElevatedButton(
                       onPressed: _submit,
                       child: Text(l10n.initializeVaultButton),
@@ -252,6 +416,54 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String description,
+    Widget? actionWidget,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: iconColor, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                description,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12.5,
+                  height: 1.35,
+                ),
+              ),
+              if (actionWidget != null) actionWidget,
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
