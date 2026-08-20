@@ -71,14 +71,18 @@ class PasswordStrengthBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              '${l10n.securityLevelPrefix}: ${l10n.passwordStrengthLabel(strength)}',
-              style: TextStyle(
-                color: strength.color,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+            Expanded(
+              child: Text(
+                '${l10n.securityLevelPrefix}: ${l10n.passwordStrengthLabel(strength)}',
+                style: TextStyle(
+                  color: strength.color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               l10n.passwordLengthLabel(password.length),
               style: const TextStyle(

@@ -32,6 +32,9 @@ class VaultCard extends StatelessWidget {
   /// Duration in seconds for the auto-clearing clipboard feedback.
   final int clipboardClearSeconds;
 
+  /// Whether this card is currently selected in a desktop master-detail layout.
+  final bool isSelected;
+
   /// Creates a [VaultCard] widget.
   const VaultCard({
     super.key,
@@ -41,6 +44,7 @@ class VaultCard extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.clipboardClearSeconds = 30,
+    this.isSelected = false,
   });
 
   /// Maps [VaultCategory] to an appropriate Material icon.
@@ -294,9 +298,14 @@ class VaultCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: isSelected
+            ? AppColors.primary.withValues(alpha: 0.12)
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(
+          color: isSelected ? AppColors.primaryLight : AppColors.border,
+          width: isSelected ? 1.5 : 1.0,
+        ),
       ),
       child: Material(
         color: Colors.transparent,

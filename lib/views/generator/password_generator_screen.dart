@@ -5,6 +5,7 @@ import '../../core/localization/app_localizations.dart';
 import '../../core/services/clipboard_service.dart';
 import '../../core/utils/password_generator.dart';
 import '../widgets/password_strength_bar.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/swipe_back_wrapper.dart';
 
 /// Dedicated utility screen for generating and evaluating cryptographically strong passwords.
@@ -15,6 +16,7 @@ import '../widgets/swipe_back_wrapper.dart';
 /// - Ambiguous character exclusion (Il1O0)
 /// - Real-time password strength meter and entropy calculation
 /// - Direct clipboard copy with auto-clear
+/// - Responsive 2-column layout on desktop, single-column on mobile
 /// - Optional [onPasswordSelected] callback when invoked as a picker from the Vault editor
 class PasswordGeneratorScreen extends StatefulWidget {
   /// Optional callback invoked when the user selects the generated password for a form.
@@ -92,6 +94,7 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isDesktop = isDesktopView(context);
 
     return SwipeBackWrapper(
       child: Scaffold(
@@ -99,209 +102,275 @@ class _PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
           title: Text(l10n.passwordGeneratorTitle),
         ),
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              16,
-              20,
-              MediaQuery.of(context).padding.bottom + 36,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Password Display Card with Live Strength Bar
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SelectableText(
-                              _generatedPassword,
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.2,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.refresh_rounded,
-                                color: AppColors.primaryLight, size: 26),
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              _regenerate();
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.copy_rounded,
-                                color: AppColors.textSecondary, size: 24),
-                            onPressed: _copy,
-                          ),
-                        ],
-                      ),
-                      PasswordStrengthBar(password: _generatedPassword),
-                    ],
-                  ),
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                MediaQuery.of(context).padding.bottom + 36,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isDesktop ? 900 : double.infinity,
                 ),
-                const SizedBox(height: 28),
-                // Password Length Slider Card
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            l10n.lengthSliderLabel,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.primary),
-                            ),
-                            child: Text(
-                              '$_length',
-                              style: const TextStyle(
-                                color: AppColors.primaryLight,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: AppColors.primary,
-                          thumbColor: AppColors.primary,
-                          inactiveTrackColor: AppColors.surfaceHighlight,
-                        ),
-                        child: Slider(
-                          value: _length.toDouble(),
-                          min: 8,
-                          max: 48,
-                          divisions: 40,
-                          onChanged: (val) {
-                            setState(() => _length = val.round());
-                            _regenerate();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Character Sets Toggle Tiers
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildToggleTile(
-                        title: l10n.uppercaseOption,
-                        value: _includeUppercase,
-                        onChanged: (val) {
-                          setState(() => _includeUppercase = val);
-                          _regenerate();
-                        },
-                      ),
-                      const Divider(color: AppColors.border),
-                      _buildToggleTile(
-                        title: l10n.lowercaseOption,
-                        value: _includeLowercase,
-                        onChanged: (val) {
-                          setState(() => _includeLowercase = val);
-                          _regenerate();
-                        },
-                      ),
-                      const Divider(color: AppColors.border),
-                      _buildToggleTile(
-                        title: l10n.numbersOption,
-                        value: _includeNumbers,
-                        onChanged: (val) {
-                          setState(() => _includeNumbers = val);
-                          _regenerate();
-                        },
-                      ),
-                      const Divider(color: AppColors.border),
-                      _buildToggleTile(
-                        title: l10n.symbolsOption,
-                        value: _includeSymbols,
-                        onChanged: (val) {
-                          setState(() => _includeSymbols = val);
-                          _regenerate();
-                        },
-                      ),
-                      const Divider(color: AppColors.border),
-                      _buildToggleTile(
-                        title: l10n.excludeAmbiguousOption,
-                        subtitle: l10n.excludeAmbiguousSubtitle,
-                        value: _excludeAmbiguous,
-                        onChanged: (val) {
-                          setState(() => _excludeAmbiguous = val);
-                          _regenerate();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Action Button (Use Password or Copy)
-                if (widget.onPasswordSelected != null)
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      widget.onPasswordSelected!(_generatedPassword);
-                      Navigator.of(context).pop();
-                    },
-                    icon: const Icon(Icons.check_rounded),
-                    label: Text(l10n.usePasswordButton),
-                  )
-                else
-                  ElevatedButton.icon(
-                    onPressed: _copy,
-                    icon: const Icon(Icons.copy_rounded),
-                    label: Text(l10n.copyPassword),
-                  ),
-              ],
+                child: isDesktop
+                    ? _buildDesktopLayout(context, l10n)
+                    : _buildMobileLayout(context, l10n),
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildPasswordDisplayCard(context),
+        const SizedBox(height: 28),
+        _buildSliderCard(context, l10n),
+        const SizedBox(height: 16),
+        _buildToggleCard(l10n),
+        const SizedBox(height: 24),
+        _buildActionButton(l10n),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, AppLocalizations l10n) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left Column: Password Display & Actions
+        Expanded(
+          flex: 5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildPasswordDisplayCard(context),
+              const SizedBox(height: 24),
+              _buildActionButton(l10n),
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+
+        // Right Column: Controls & Toggles
+        Expanded(
+          flex: 6,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSliderCard(context, l10n),
+              const SizedBox(height: 16),
+              _buildToggleCard(l10n),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPasswordDisplayCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: SelectableText(
+                  _generatedPassword,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded,
+                    color: AppColors.primaryLight, size: 26),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  _regenerate();
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy_rounded,
+                    color: AppColors.textSecondary, size: 24),
+                onPressed: _copy,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          PasswordStrengthBar(password: _generatedPassword),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliderCard(BuildContext context, AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l10n.lengthSliderLabel,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.primary),
+                ),
+                child: Text(
+                  '$_length',
+                  style: const TextStyle(
+                    color: AppColors.primaryLight,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppColors.primary,
+              thumbColor: AppColors.primary,
+              inactiveTrackColor: AppColors.surfaceHighlight,
+            ),
+            child: Slider(
+              value: _length.toDouble(),
+              min: 8,
+              max: 48,
+              divisions: 40,
+              onChanged: (val) {
+                setState(() => _length = val.round());
+                _regenerate();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleCard(AppLocalizations l10n) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          _buildToggleTile(
+            title: l10n.uppercaseOption,
+            value: _includeUppercase,
+            onChanged: (val) {
+              setState(() => _includeUppercase = val);
+              _regenerate();
+            },
+          ),
+          const Divider(color: AppColors.border),
+          _buildToggleTile(
+            title: l10n.lowercaseOption,
+            value: _includeLowercase,
+            onChanged: (val) {
+              setState(() => _includeLowercase = val);
+              _regenerate();
+            },
+          ),
+          const Divider(color: AppColors.border),
+          _buildToggleTile(
+            title: l10n.numbersOption,
+            value: _includeNumbers,
+            onChanged: (val) {
+              setState(() => _includeNumbers = val);
+              _regenerate();
+            },
+          ),
+          const Divider(color: AppColors.border),
+          _buildToggleTile(
+            title: l10n.symbolsOption,
+            value: _includeSymbols,
+            onChanged: (val) {
+              setState(() => _includeSymbols = val);
+              _regenerate();
+            },
+          ),
+          const Divider(color: AppColors.border),
+          _buildToggleTile(
+            title: l10n.excludeAmbiguousOption,
+            subtitle: l10n.excludeAmbiguousSubtitle,
+            value: _excludeAmbiguous,
+            onChanged: (val) {
+              setState(() => _excludeAmbiguous = val);
+              _regenerate();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(AppLocalizations l10n) {
+    if (widget.onPasswordSelected != null) {
+      return ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        onPressed: () {
+          widget.onPasswordSelected!(_generatedPassword);
+          Navigator.of(context).pop();
+        },
+        icon: const Icon(Icons.check_rounded),
+        label: Text(l10n.usePasswordButton),
+      );
+    }
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      onPressed: _copy,
+      icon: const Icon(Icons.copy_rounded),
+      label: Text(l10n.copyPassword),
     );
   }
 

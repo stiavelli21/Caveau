@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:caveau/main.dart';
 import 'package:caveau/core/localization/app_localizations.dart';
 import 'package:caveau/models/vault_item.dart';
+import 'package:caveau/models/security_settings.dart';
 import 'package:caveau/providers/vault_provider.dart';
 import 'package:caveau/providers/settings_provider.dart';
 import 'package:caveau/core/services/secure_storage_service.dart';
@@ -15,6 +17,7 @@ import 'package:caveau/providers/auth_provider.dart';
 import 'package:caveau/views/auth/lock_screen.dart';
 import 'package:caveau/views/auth/onboarding_screen.dart';
 import 'package:caveau/views/vault/vault_detail_screen.dart';
+import 'package:caveau/views/widgets/desktop_sidebar.dart';
 import 'package:caveau/views/widgets/language_selector_button.dart';
 import 'package:caveau/views/widgets/vault_card.dart';
 import 'package:caveau/views/widgets/vault_logo.dart';
@@ -43,16 +46,23 @@ Widget _buildTestApp({
       ChangeNotifierProvider<SettingsProvider>.value(value: sp),
       ChangeNotifierProvider<AuthProvider>.value(value: ap),
     ],
-    child: MaterialApp(
-      locale: Locale(locale),
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      home: child,
+    child: Consumer<SettingsProvider>(
+      builder: (context, spContext, _) {
+        final activeCode = settingsProvider != null
+            ? spContext.settings.languageCode
+            : locale;
+        return MaterialApp(
+          locale: Locale(activeCode),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: child,
+        );
+      },
     ),
   );
 }
@@ -305,14 +315,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify all 5 language options appear in the bottom sheet
-    expect(find.text('Italiano'), findsOneWidget);
-    expect(find.text('English'), findsOneWidget);
-    expect(find.text('Español'), findsOneWidget);
-    expect(find.text('Français'), findsOneWidget);
-    expect(find.text('Deutsch'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Italiano'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'English'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Español'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Français'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Deutsch'), findsOneWidget);
 
     // Tap Español
-    await tester.tap(find.text('Español'));
+    await tester.tap(find.widgetWithText(ListTile, 'Español'));
     await tester.pumpAndSettle();
 
     // Language in provider should now be 'es'
@@ -731,8 +741,8 @@ void main() {
     expect(find.byType(TextField), findsNWidgets(2));
 
     // Type non-matching passwords and try to generate
-    await tester.enterText(find.byType(TextField).at(0), '123456');
-    await tester.enterText(find.byType(TextField).at(1), '654321');
+    await tester.enterText(find.byType(TextField).at(0), 'Password123');
+    await tester.enterText(find.byType(TextField).at(1), 'Password456');
     await tester.tap(find.text('Genera'));
     await tester.pumpAndSettle();
 
@@ -767,6 +777,494 @@ void main() {
     expect(find.text('Caveau Protetto'), findsNothing);
     mockScreenSec.dispose();
   });
+
+  testWidgets('VaultHomeScreen renders DesktopSidebar and Split-View when screen width >= 900', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final mockStorage = SecureStorageService();
+    final authService = AuthService(storageService: mockStorage);
+    final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+    final vaultProvider = VaultProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        vaultProvider: vaultProvider,
+        child: const VaultHomeScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify DesktopSidebar is rendered
+    expect(find.byType(DesktopSidebar), findsOneWidget);
+    expect(find.text('Nessun elemento selezionato'), findsOneWidget);
+    expect(find.text('Seleziona un elemento per visualizzarne i dettagli'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
+
+  testWidgets('VaultHomeScreen selecting item in desktop master list renders VaultDetailView in detail pane', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final mockStorage = SecureStorageService();
+    final authService = AuthService(storageService: mockStorage);
+    final authProvider = AuthProvider(authService: authService, storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+
+    final sampleItem = VaultItem(
+      id: 'test-desktop-item-1',
+      title: 'GitHub Work Account',
+      category: VaultCategory.login,
+      username: 'dev@github.com',
+      password: 'StrongSecretPassword123!',
+    );
+    final vaultProvider = _TestVaultProvider(initialItems: [sampleItem]);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        vaultProvider: vaultProvider,
+        child: const VaultHomeScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Tap on the item in the master list
+    await tester.tap(find.text('GitHub Work Account'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify VaultDetailView is displayed inline in the right pane
+    expect(find.byType(VaultDetailView), findsOneWidget);
+    expect(find.text('dev@github.com'), findsNWidgets(2));
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
+
+  testWidgets('LockScreen on desktop widescreen renders centered card and does not show biometrics', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final mockAuthService = _MockTestAuthService();
+    final authProvider = _TestAuthProvider(authService: mockAuthService);
+    final settingsProvider = SettingsProvider();
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        child: const LockScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify PIN text field exists
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text(AppLocalizationsIt().unlockVaultButton), findsOneWidget);
+    // Verify biometric unlock button is NOT present on desktop
+    expect(find.byIcon(Icons.fingerprint_rounded), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
+
+  testWidgets('OnboardingScreen displays explanatory error when submitting without disclaimer and updates on language switch', (WidgetTester tester) async {
+    final storage = SecureStorageService();
+    final settingsProvider = _TestSettingsProvider();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: Consumer<SettingsProvider>(
+          builder: (context, sp, _) {
+            return MaterialApp(
+              locale: Locale(sp.settings.languageCode),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              home: MultiProvider(
+                providers: [
+                  ChangeNotifierProvider<AuthProvider>(create: (_) => AuthProvider(storageService: storage)),
+                ],
+                child: const OnboardingScreen(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Initially no error is present
+    expect(find.text(AppLocalizationsIt().onboardingDisclaimerRequiredError), findsNothing);
+
+    // Scroll to and tap initialize button without checking disclaimer
+    final initButton = find.widgetWithText(ElevatedButton, AppLocalizationsIt().initializeVaultButton);
+    await tester.ensureVisible(initButton);
+    await tester.tap(initButton);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify explanatory Italian error message is displayed
+    expect(find.text(AppLocalizationsIt().onboardingDisclaimerRequiredError), findsOneWidget);
+
+    // Switch language to English dynamically
+    await settingsProvider.updateLanguage('en');
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify error message translated dynamically to English!
+    expect(find.text(AppLocalizationsEn().onboardingDisclaimerRequiredError), findsOneWidget);
+    expect(find.text(AppLocalizationsIt().onboardingDisclaimerRequiredError), findsNothing);
+
+    // Check the disclaimer checkbox
+    final checkbox = find.byType(Checkbox);
+    await tester.ensureVisible(checkbox);
+    await tester.tap(checkbox);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Error should be cleared
+    expect(find.text(AppLocalizationsEn().onboardingDisclaimerRequiredError), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
+
+  testWidgets('SecurityAuditScreen renders multi-line stat titles across supported languages', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final vaultProvider = VaultProvider(storageService: mockStorage);
+    final settingsProvider = _TestSettingsProvider();
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        vaultProvider: vaultProvider,
+        settingsProvider: settingsProvider,
+        child: const SecurityAuditScreen(),
+      ),
+    );
+
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // In Italian
+    expect(find.text(AppLocalizationsIt().totalItemsStat), findsOneWidget);
+    expect(find.text(AppLocalizationsIt().weakPasswordsStat), findsOneWidget);
+    expect(find.text(AppLocalizationsIt().reusedPasswordsStat), findsOneWidget);
+
+    // Switch to German (which typically has the longest compound words/strings)
+    await settingsProvider.updateLanguage('de');
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text(AppLocalizationsDe().totalItemsStat), findsOneWidget);
+    expect(find.text(AppLocalizationsDe().weakPasswordsStat), findsOneWidget);
+    expect(find.text(AppLocalizationsDe().reusedPasswordsStat), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
+
+  testWidgets('Inactivity auto-locks vault after autoLockSeconds elapsed without user interaction', (WidgetTester tester) async {
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(initialSettings: const SecuritySettings(autoLockSeconds: 15));
+    final mockScreenSec = _MockScreenSecurityService();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(screenSecurityService: mockScreenSec),
+      ),
+    );
+
+    await tester.pump();
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+    expect(find.byType(VaultHomeScreen), findsOneWidget);
+
+    // Wait 10 seconds (less than 15s)
+    await tester.pump(const Duration(seconds: 10));
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Wait another 6 seconds (total 16s > 15s)
+    await tester.pump(const Duration(seconds: 6));
+    expect(authProvider.status, equals(AuthStatus.locked));
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    mockScreenSec.dispose();
+  });
+
+  testWidgets('User pointer interaction resets inactivity timer', (WidgetTester tester) async {
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(initialSettings: const SecuritySettings(autoLockSeconds: 15));
+    final mockScreenSec = _MockScreenSecurityService();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(screenSecurityService: mockScreenSec),
+      ),
+    );
+
+    await tester.pump();
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Wait 10s
+    await tester.pump(const Duration(seconds: 10));
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // User touches screen / taps
+    await tester.tap(find.byType(Scaffold).first);
+    await tester.pump();
+
+    // Wait 10s after interaction (total 20s elapsed from start, but 10s from tap < 15s)
+    await tester.pump(const Duration(seconds: 10));
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Now wait remaining 6s (total 16s from tap > 15s)
+    await tester.pump(const Duration(seconds: 6));
+    expect(authProvider.status, equals(AuthStatus.locked));
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    mockScreenSec.dispose();
+  });
+
+  testWidgets('SettingsScreen wipe all data button says ELIMINA and prompts for Master PIN before wiping', (WidgetTester tester) async {
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider();
+    final vaultProvider = _TestVaultProvider(initialItems: [
+      VaultItem(
+        id: 'test-wipe-item',
+        title: 'Item to be wiped',
+        category: VaultCategory.login,
+        password: 'Password123!',
+      ),
+    ]);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        authProvider: authProvider,
+        settingsProvider: settingsProvider,
+        vaultProvider: vaultProvider,
+        child: const SettingsScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Scroll to and tap Wipe All Data tile
+    await tester.scrollUntilVisible(
+      find.text(AppLocalizationsIt().wipeAllDataTileTitle),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -100));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppLocalizationsIt().wipeAllDataTileTitle));
+    await tester.pumpAndSettle();
+
+    // Verify warning dialog is displayed with uppercase button "ELIMINA"
+    expect(find.text(AppLocalizationsIt().wipeAllDataDialogTitle), findsOneWidget);
+    expect(find.text('ELIMINA'), findsOneWidget);
+
+    // Tap "ELIMINA"
+    await tester.tap(find.text('ELIMINA'));
+    await tester.pumpAndSettle();
+
+    // Verify authentication PIN prompt dialog is displayed
+    expect(find.text(AppLocalizationsIt().confirmWipeAuthTitle), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
+
+  testWidgets('LockScreen updates countdown every second and dismisses error message upon lockout expiry', (WidgetTester tester) async {
+    var simulatedTime = DateTime(2026, 1, 1, 12, 0, 0);
+    final mockAuth = _MockWidgetLockoutAuthService(
+      lockoutSeconds: 3,
+      clock: () => simulatedTime,
+    );
+    final authProvider = AuthProvider(
+      authService: mockAuth,
+      clock: () => simulatedTime,
+    );
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        locale: 'it',
+        authProvider: authProvider,
+        child: const LockScreen(),
+      ),
+    );
+    await tester.pump();
+
+    // Trigger lockout by failing 5 times
+    for (int i = 0; i < 5; i++) {
+      await authProvider.authenticateWithPin('wrong');
+    }
+    await tester.pump();
+
+    // Check that error message is displayed with countdown
+    expect(find.textContaining('Troppi tentativi falliti'), findsOneWidget);
+    expect(find.textContaining('3s'), findsOneWidget);
+
+    // TextField should be disabled during lockout
+    final textField = tester.widget<TextField>(find.byType(TextField));
+    expect(textField.enabled, isFalse);
+
+    // Advance 1 second
+    simulatedTime = simulatedTime.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.textContaining('2s'), findsOneWidget);
+
+    // Advance 1 more second
+    simulatedTime = simulatedTime.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.textContaining('1s'), findsOneWidget);
+
+    // Advance 1 more second (lockout expires)
+    simulatedTime = simulatedTime.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+
+    // Error message must disappear completely and not get stuck at 0s!
+    expect(find.textContaining('Troppi tentativi falliti'), findsNothing);
+    expect(find.textContaining('0s'), findsNothing);
+
+    // TextField must be re-enabled!
+    final reenabledTextField = tester.widget<TextField>(find.byType(TextField));
+    expect(reenabledTextField.enabled, isTrue);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    authProvider.dispose();
+  });
+}
+
+/// Mock test implementation of [AuthService] for lockout widget tests.
+class _MockWidgetLockoutAuthService extends AuthService {
+  final int lockoutSeconds;
+  final DateTime Function() clock;
+  int failCount = 0;
+
+  _MockWidgetLockoutAuthService({
+    this.lockoutSeconds = 3,
+    DateTime Function()? clock,
+  }) : clock = clock ?? (() => DateTime.now());
+
+  @override
+  Future<bool> isBiometricAvailable() async => false;
+
+  @override
+  Future<bool> isSetupComplete() async => true;
+
+  @override
+  Future<VerifyPinResult> verifyMasterPin(String pin) async {
+    failCount++;
+    if (pin == '123456') {
+      failCount = 0;
+      return const VerifyPinSuccess();
+    }
+    if (failCount >= 5) {
+      return VerifyPinFailure(
+        failedAttempts: failCount,
+        lockoutUntil: clock().add(Duration(seconds: lockoutSeconds)),
+      );
+    }
+    return VerifyPinFailure(failedAttempts: failCount);
+  }
+}
+
+/// Mock test implementation of [SettingsProvider] for in-memory settings in tests.
+class _TestSettingsProvider extends SettingsProvider {
+  SecuritySettings _testSettings;
+
+  _TestSettingsProvider({SecuritySettings? initialSettings})
+      : _testSettings = initialSettings ?? const SecuritySettings(),
+        super();
+
+  @override
+  SecuritySettings get settings => _testSettings;
+
+  @override
+  Future<void> updateAutoLock(int seconds) async {
+    _testSettings = _testSettings.copyWith(autoLockSeconds: seconds);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> updateLanguage(String languageCode) async {
+    _testSettings = _testSettings.copyWith(languageCode: languageCode);
+    notifyListeners();
+  }
+}
+
+/// Mock test implementation of [AuthProvider] for inactivity test cases.
+class _TestInactivityAuthProvider extends AuthProvider {
+  AuthStatus _testStatus = AuthStatus.authenticated;
+
+  @override
+  bool get isBiometricSupported => false;
+
+  @override
+  AuthStatus get status => _testStatus;
+
+  @override
+  void lock() {
+    _testStatus = AuthStatus.locked;
+    notifyListeners();
+  }
+}
+
+/// Mock test implementation of [VaultProvider] keeping test items purely in-memory.
+class _TestVaultProvider extends VaultProvider {
+  _TestVaultProvider({List<VaultItem>? initialItems}) : super() {
+    if (initialItems != null) {
+      items.addAll(initialItems);
+    }
+  }
+
+  @override
+  Future<void> loadItems() async {
+    notifyListeners();
+  }
 }
 
 /// Mock test implementation of [ScreenSecurityService] for controlling screen capture stream in widget tests.

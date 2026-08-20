@@ -1,22 +1,37 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
+
 import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pointycastle/export.dart';
+
 import '../../models/vault_item.dart';
 import '../../models/security_settings.dart';
 
 /// Hardware-backed secure storage service for Caveau.
-/// 
+///
 /// Encapsulates interactions with [FlutterSecureStorage], leveraging:
 /// - Android Keystore (AES-256 encryption with automatic recovery reset)
 /// - iOS & macOS Keychain (with `first_unlock_this_device` accessibility)
-/// 
+///
 /// Manages:
 /// - Master PIN hashes and salts
 /// - Security configuration preferences
 /// - Vault item records and index indexing
-/// - Password-protected encrypted backup exports and verified imports
+/// - Password-protected encrypted backup exports (v2: AES-256-GCM + PBKDF2)
+///   and backward-compatible verified imports (v1: XOR legacy, v2: AES-GCM)
 class SecureStorageService {
   final FlutterSecureStorage _storage;
+
+  /// Stream that emits `true` when a Keystore hardware reset destroys all data.
+  /// Consumers can listen to this to display a user-facing warning before the
+  /// app transitions to [AuthStatus.setupRequired].
+  final StreamController<bool> _keystoreResetController =
+      StreamController<bool>.broadcast();
+
+  Stream<bool> get onKeystoreReset => _keystoreResetController.stream;
 
   /// Initializes [SecureStorageService] with optional injected [FlutterSecureStorage] instance for testing.
   SecureStorageService({FlutterSecureStorage? storage})
@@ -40,6 +55,12 @@ class SecureStorageService {
   static const String _keyVaultIndex = 'caveau_vault_index';
   static const String _itemPrefix = 'caveau_item_';
 
+  // Backup v2 crypto constants
+  static const int _pbkdf2Iterations = 600000;
+  static const int _pbkdf2KeyLength = 32; // 256-bit AES key
+  static const int _gcmIvLength = 12;     // 96-bit GCM nonce (NIST recommended)
+  static const int _gcmTagLength = 16;    // 128-bit authentication tag
+
   // ===========================================================================
   // MASTER PIN & SALT MANAGEMENT
   // ===========================================================================
@@ -54,13 +75,26 @@ class SecureStorageService {
   }
 
   /// Retrieves the stored Master PIN hash from secure hardware storage.
+  /// Emits a Keystore reset event if a [PlatformException] indicates hardware failure.
   Future<String?> getMasterPinHash() async {
-    return await _storage.read(key: _keyMasterPinHash);
+    try {
+      return await _storage.read(key: _keyMasterPinHash);
+    } on PlatformException catch (e) {
+      // Android Keystore hardware failure — storage was reset by resetOnError:true
+      if (_isKeystoreError(e)) {
+        _keystoreResetController.add(true);
+      }
+      return null;
+    }
   }
 
   /// Retrieves the stored Master PIN salt from secure hardware storage.
   Future<String?> getMasterPinSalt() async {
-    return await _storage.read(key: _keyMasterPinSalt);
+    try {
+      return await _storage.read(key: _keyMasterPinSalt);
+    } on PlatformException {
+      return null;
+    }
   }
 
   /// Checks whether a Master PIN has been saved in secure storage.
@@ -188,68 +222,161 @@ class SecureStorageService {
   }
 
   // ===========================================================================
-  // ENCRYPTED BACKUP & RESTORE
+  // ENCRYPTED BACKUP & RESTORE — v2 (AES-256-GCM + PBKDF2)
   // ===========================================================================
 
+  /// Derives a 256-bit AES key from [password] and [salt] using PBKDF2-HMAC-SHA256.
+  /// Uses [_pbkdf2Iterations] rounds as per OWASP 2024 recommendations for SHA-256.
+  static Uint8List _deriveKeyPbkdf2(String password, Uint8List salt) {
+    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64));
+    pbkdf2.init(Pbkdf2Parameters(salt, _pbkdf2Iterations, _pbkdf2KeyLength));
+    return pbkdf2.process(Uint8List.fromList(utf8.encode(password)));
+  }
+
+  /// Generates [length] cryptographically secure random bytes.
+  static Uint8List _randomBytes(int length) {
+    final rng = Random.secure();
+    return Uint8List.fromList(
+      List<int>.generate(length, (_) => rng.nextInt(256)),
+    );
+  }
+
+  /// Encrypts [plaintext] with AES-256-GCM using [key] and [iv].
+  /// Returns the ciphertext with the 16-byte authentication tag appended.
+  static Uint8List _aesGcmEncrypt(
+      Uint8List key, Uint8List iv, Uint8List plaintext) {
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(
+        true, // encrypt
+        AEADParameters(
+          KeyParameter(key),
+          _gcmTagLength * 8, // tag length in bits
+          iv,
+          Uint8List(0), // no additional authenticated data
+        ),
+      );
+    return cipher.process(plaintext);
+  }
+
+  /// Decrypts [ciphertext] (with appended GCM tag) with AES-256-GCM.
+  /// Throws [InvalidCipherTextException] if authentication fails (tampered data).
+  static Uint8List _aesGcmDecrypt(
+      Uint8List key, Uint8List iv, Uint8List ciphertext) {
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(
+        false, // decrypt
+        AEADParameters(
+          KeyParameter(key),
+          _gcmTagLength * 8,
+          iv,
+          Uint8List(0),
+        ),
+      );
+    return cipher.process(ciphertext);
+  }
+
   /// Exports all vault items into a password-protected JSON backup envelope.
-  /// 
-  /// Derives an encryption key from [backupPassword] using SHA-256, encrypts the payload
-  /// using a byte stream cipher, and computes a SHA-256 integrity checksum.
+  ///
+  /// Format v2: PBKDF2-HMAC-SHA256 key derivation (600K iterations) +
+  /// AES-256-GCM encryption (random 12-byte IV, 128-bit auth tag).
+  /// The auth tag provides both integrity and authenticity — no separate checksum needed.
+  ///
+  /// Backup envelope structure (JSON):
+  /// ```json
+  /// {
+  ///   "caveau_backup": "v2",
+  ///   "salt": "<base64>",   // 32-byte PBKDF2 salt
+  ///   "iv":   "<base64>",   // 12-byte GCM nonce
+  ///   "data": "<base64>"    // ciphertext + 16-byte GCM tag
+  /// }
+  /// ```
   Future<String> exportEncryptedBackup(String backupPassword) async {
     final items = await getAllVaultItems();
     final payloadJson = jsonEncode({
-      'version': '1.0',
+      'version': '2.0',
       'exportedAt': DateTime.now().toIso8601String(),
       'items': items.map((i) => i.toJson()).toList(),
     });
 
-    // Derive key using SHA-256 for password-based encryption wrapping
-    final keyBytes = sha256.convert(utf8.encode(backupPassword)).bytes;
-    final payloadBytes = utf8.encode(payloadJson);
-    
-    // XOR stream cipher with derived key stream for portable encrypted backup payload
-    final encryptedBytes = List<int>.generate(payloadBytes.length, (i) {
-      return payloadBytes[i] ^ keyBytes[i % keyBytes.length];
-    });
+    // Generate fresh random salt and IV for each export
+    final salt = _randomBytes(32);
+    final iv = _randomBytes(_gcmIvLength);
 
-    // Compute SHA-256 checksum over ciphertext for tamper-detection
-    final checksum = sha256.convert(encryptedBytes).toString();
-    final finalExport = {
-      'caveau_backup': 'v1',
-      'checksum': checksum,
-      'data': base64Encode(encryptedBytes),
+    // Derive 256-bit key via PBKDF2-HMAC-SHA256 (600K rounds)
+    final key = _deriveKeyPbkdf2(backupPassword, salt);
+
+    // Encrypt with AES-256-GCM — tag is appended to ciphertext automatically
+    final plaintext = Uint8List.fromList(utf8.encode(payloadJson));
+    final ciphertext = _aesGcmEncrypt(key, iv, plaintext);
+
+    final envelope = {
+      'caveau_backup': 'v2',
+      'salt': base64Encode(salt),
+      'iv': base64Encode(iv),
+      'data': base64Encode(ciphertext),
     };
 
-    return jsonEncode(finalExport);
+    return jsonEncode(envelope);
   }
 
   /// Imports and restores vault items from an encrypted [backupJson] envelope using [backupPassword].
-  /// 
-  /// Verifies format version, validates the SHA-256 checksum, decrypts data,
-  /// and persists all parsed items into the vault. Returns the total count of imported items.
-  Future<int> importEncryptedBackup(String backupJson, String backupPassword) async {
-    final Map<String, dynamic> backup = jsonDecode(backupJson) as Map<String, dynamic>;
-    if (backup['caveau_backup'] != 'v1') {
-      throw const FormatException('Unrecognized backup format');
+  ///
+  /// Supports:
+  /// - **v2** (AES-256-GCM + PBKDF2): current format. GCM authentication tag
+  ///   guarantees integrity — wrong password throws [InvalidCipherTextException].
+  /// - **v1** (XOR + SHA-256 checksum): legacy format, maintained for backward compatibility.
+  ///
+  /// Returns the total count of imported items.
+  Future<int> importEncryptedBackup(
+      String backupJson, String backupPassword) async {
+    final Map<String, dynamic> backup =
+        jsonDecode(backupJson) as Map<String, dynamic>;
+
+    final String version = backup['caveau_backup'] as String? ?? '';
+
+    late String payloadJson;
+
+    if (version == 'v2') {
+      // --- v2: AES-256-GCM + PBKDF2 ---
+      final salt = base64Decode(backup['salt'] as String);
+      final iv = base64Decode(backup['iv'] as String);
+      final ciphertext = base64Decode(backup['data'] as String);
+
+      final key = _deriveKeyPbkdf2(backupPassword, salt);
+
+      try {
+        final plaintext = _aesGcmDecrypt(key, iv, ciphertext);
+        payloadJson = utf8.decode(plaintext);
+      } on InvalidCipherTextException {
+        // GCM authentication failed — wrong password or tampered data
+        throw const FormatException(
+            'Password errata o backup corrotto/manomesso');
+      }
+    } else if (version == 'v1') {
+      // --- v1 Legacy: XOR stream cipher + SHA-256 checksum ---
+      // Maintained for backward compatibility with backups created before v2.
+      final String dataB64 = backup['data'] as String;
+      final String checksum = backup['checksum'] as String;
+      final encryptedBytes = base64Decode(dataB64);
+
+      // Validate ciphertext integrity
+      final actualChecksum = sha256.convert(encryptedBytes).toString();
+      if (actualChecksum != checksum) {
+        throw const FormatException('Backup corrotto o manomesso');
+      }
+
+      // Decrypt v1 payload using derived password key (XOR)
+      final keyBytes = sha256.convert(utf8.encode(backupPassword)).bytes;
+      final decryptedBytes = List<int>.generate(
+        encryptedBytes.length,
+        (i) => encryptedBytes[i] ^ keyBytes[i % keyBytes.length],
+      );
+
+      payloadJson = utf8.decode(decryptedBytes);
+    } else {
+      throw const FormatException('Formato backup non riconosciuto');
     }
 
-    final String dataB64 = backup['data'] as String;
-    final String checksum = backup['checksum'] as String;
-    final encryptedBytes = base64Decode(dataB64);
-
-    // Validate ciphertext integrity
-    final actualChecksum = sha256.convert(encryptedBytes).toString();
-    if (actualChecksum != checksum) {
-      throw const FormatException('Corrupted or tampered backup file');
-    }
-
-    // Decrypt payload using derived password key
-    final keyBytes = sha256.convert(utf8.encode(backupPassword)).bytes;
-    final decryptedBytes = List<int>.generate(encryptedBytes.length, (i) {
-      return encryptedBytes[i] ^ keyBytes[i % keyBytes.length];
-    });
-
-    final payloadJson = utf8.decode(decryptedBytes);
     final payload = jsonDecode(payloadJson) as Map<String, dynamic>;
     final List<dynamic> itemsList = payload['items'] as List<dynamic>;
 
@@ -262,5 +389,27 @@ class SecureStorageService {
     }
 
     return importedCount;
+  }
+
+  // ===========================================================================
+  // HELPERS
+  // ===========================================================================
+
+  /// Checks if a [PlatformException] from flutter_secure_storage is a Keystore error.
+  bool _isKeystoreError(PlatformException e) {
+    final code = e.code.toLowerCase();
+    final message = (e.message ?? '').toLowerCase();
+    // Android Keystore errors typically contain these patterns
+    return code.contains('keystore') ||
+        code.contains('exception') ||
+        message.contains('keystore') ||
+        message.contains('keystoreexception') ||
+        message.contains('android keystore') ||
+        message.contains('user not authenticated');
+  }
+
+  /// Releases resources held by this service.
+  void dispose() {
+    _keystoreResetController.close();
   }
 }

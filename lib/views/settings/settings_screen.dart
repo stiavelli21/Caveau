@@ -8,6 +8,8 @@ import '../../core/localization/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/vault_provider.dart';
+import '../../core/utils/app_platform.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/swipe_back_wrapper.dart';
 
 /// Settings and security management screen.
@@ -28,6 +30,8 @@ class SettingsScreen extends StatelessWidget {
   /// Displays modal bottom sheet for changing the app language.
   void _showLanguagePicker(BuildContext context, SettingsProvider provider) {
     final l10n = context.l10n;
+    final isWindows = AppPlatform.isWindows;
+
     showModalBottomSheet(
       context: context,
       useSafeArea: true,
@@ -59,7 +63,9 @@ class SettingsScreen extends StatelessWidget {
                 ...AppLocalizations.supportedLanguages.map((lang) {
                   final isSelected = current == lang.code;
                   return ListTile(
-                    leading: Text(lang.flag, style: const TextStyle(fontSize: 22)),
+                    leading: isWindows
+                        ? null
+                        : Text(lang.flag, style: const TextStyle(fontSize: 22)),
                     title: Text(
                       lang.nativeName,
                       style: TextStyle(
@@ -298,8 +304,16 @@ class SettingsScreen extends StatelessWidget {
                         final pwd = pwdCtrl.text.trim();
                         final confirmPwd = confirmPwdCtrl.text.trim();
 
-                        if (pwd.length < 6) {
+                        if (pwd.length < 8) {
                           setState(() => error = l10n.backupPasswordMinCharsError);
+                          return;
+                        }
+
+                        // Require at least one letter and one digit for minimal strength
+                        final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(pwd);
+                        final hasDigit = RegExp(r'[0-9]').hasMatch(pwd);
+                        if (!hasLetter || !hasDigit) {
+                          setState(() => error = l10n.backupPasswordTooWeakError);
                           return;
                         }
 
@@ -602,12 +616,9 @@ class SettingsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: () async {
+                  onPressed: () {
                     Navigator.of(ctx).pop();
-                    final vault = context.read<VaultProvider>();
-                    final auth = context.read<AuthProvider>();
-                    await vault.wipeAllData();
-                    auth.lock();
+                    _authenticateAndWipeAllData(context);
                   },
                   child: Text(l10n.wipeAllDataConfirmButton),
                 ),
@@ -619,12 +630,200 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Authenticates with biometrics or falls back to Master PIN before wiping all data.
+  Future<void> _authenticateAndWipeAllData(BuildContext context) async {
+    final auth = context.read<AuthProvider>();
+    final settingsProvider = context.read<SettingsProvider>();
+    final isDesktop = isDesktopView(context);
+
+    // Prompt biometrics directly on mobile if supported and enabled in settings
+    if (!isDesktop &&
+        auth.isBiometricSupported &&
+        settingsProvider.settings.biometricsEnabled) {
+      final bioSuccess = await auth.authenticateWithBiometrics(silentFail: true);
+      if (bioSuccess) {
+        if (context.mounted) {
+          final vault = context.read<VaultProvider>();
+          await vault.wipeAllData();
+          await auth.checkInitialState();
+        }
+        return;
+      }
+    }
+
+    // If biometrics not available, failed, cancelled, or on desktop, show Master PIN prompt dialog
+    if (context.mounted) {
+      _showWipeAuthPinDialog(context);
+    }
+  }
+
+  /// Displays Master PIN input dialog to authorize complete vault wipe.
+  void _showWipeAuthPinDialog(BuildContext context) {
+    final l10n = context.l10n;
+    final pinCtrl = TextEditingController();
+    String? error;
+    bool obscurePin = true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) {
+          final auth = context.read<AuthProvider>();
+          final settingsProvider = context.read<SettingsProvider>();
+          final isDesktop = isDesktopView(context);
+          final canUseBiometrics = !isDesktop &&
+              auth.isBiometricSupported &&
+              settingsProvider.settings.biometricsEnabled;
+
+          void submitPin() async {
+            final pin = pinCtrl.text.trim();
+            if (pin.isEmpty) {
+              setState(() => error = l10n.enterMasterPinPrompt);
+              return;
+            }
+
+            final success = await auth.authenticateWithPin(pin);
+            if (success) {
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop();
+              }
+              if (context.mounted) {
+                final vault = context.read<VaultProvider>();
+                await vault.wipeAllData();
+                await auth.checkInitialState();
+              }
+            } else {
+              setState(() => error = l10n.currentPinInvalid);
+            }
+          }
+
+          return AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.border),
+            ),
+            title: Row(
+              children: [
+                const Icon(Icons.shield_outlined, color: AppColors.danger, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    l10n.confirmWipeAuthTitle,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.confirmWipeAuthPrompt,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: pinCtrl,
+                    obscureText: obscurePin,
+                    autofocus: true,
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => submitPin(),
+                    decoration: InputDecoration(
+                      labelText: l10n.currentPinFieldLabel,
+                      prefixIcon: const Icon(Icons.pin_outlined, color: AppColors.primaryLight, size: 20),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePin ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(() => obscurePin = !obscurePin),
+                      ),
+                    ),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      error!,
+                      style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                    ),
+                  ],
+                  if (canUseBiometrics) ...[
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.fingerprint_rounded, color: AppColors.primaryLight, size: 20),
+                        label: Text(
+                          l10n.unlockWithBiometricsButton,
+                          style: const TextStyle(color: AppColors.primaryLight, fontSize: 13),
+                        ),
+                        onPressed: () async {
+                          final bioSuccess = await auth.authenticateWithBiometrics(silentFail: true);
+                          if (bioSuccess) {
+                            if (ctx.mounted) {
+                              Navigator.of(ctx).pop();
+                            }
+                            if (context.mounted) {
+                              final vault = context.read<VaultProvider>();
+                              await vault.wipeAllData();
+                              await auth.checkInitialState();
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            actions: [
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: Text(l10n.cancelButton),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.danger,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: submitPin,
+                      child: Text(l10n.wipeAllDataConfirmButton),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     final authProvider = context.watch<AuthProvider>();
     final l10n = context.l10n;
     final settings = settingsProvider.settings;
+
+    final isDesktop = isDesktopView(context);
 
     final currentMeta = AppLocalizations.supportedLanguages.firstWhere(
       (l) => l.code == settings.languageCode,
@@ -637,14 +836,19 @@ class SettingsScreen extends StatelessWidget {
           title: Text(l10n.settingsTitle),
         ),
         body: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              16,
-              20,
-              MediaQuery.of(context).padding.bottom + 36,
-            ),
-            children: [
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isDesktop ? 760 : double.infinity,
+              ),
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  16,
+                  20,
+                  MediaQuery.of(context).padding.bottom + 36,
+                ),
+                children: [
               // Authentication & Access Section
               _buildSectionHeader(l10n.sectionAuthAccess),
               Container(
@@ -774,7 +978,7 @@ class SettingsScreen extends StatelessWidget {
                   border: Border.all(color: AppColors.border),
                 ),
                 child: ListTile(
-                  leading: Text(currentMeta.flag, style: const TextStyle(fontSize: 22)),
+                  leading: const Icon(Icons.language_rounded, color: AppColors.primaryLight),
                   title: Text(l10n.languageOptionLabel, style: const TextStyle(fontWeight: FontWeight.w500)),
                   subtitle: Text(l10n.languageOptionSubtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                   trailing: Row(
@@ -857,7 +1061,9 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   /// Helper rendering uppercase styled section header labels.
@@ -904,6 +1110,10 @@ class SettingsScreen extends StatelessWidget {
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
                 _buildOptionTile(ctx, l10n.autoLockImmediate, 0, provider.settings.autoLockSeconds, (v) {
+                  provider.updateAutoLock(v);
+                  Navigator.of(ctx).pop();
+                }),
+                _buildOptionTile(ctx, l10n.autoLock15s, 15, provider.settings.autoLockSeconds, (v) {
                   provider.updateAutoLock(v);
                   Navigator.of(ctx).pop();
                 }),

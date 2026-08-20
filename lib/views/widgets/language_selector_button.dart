@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/localization/app_localizations.dart';
+import '../../core/utils/app_platform.dart';
 import '../../providers/settings_provider.dart';
 
-/// Interactive button displaying the active language flag and code.
+/// Interactive button displaying the active language name or flag.
 /// 
+/// On Windows, flags are omitted in favor of clean language names to prevent font glyph issues.
 /// When tapped, opens a bottom sheet enabling the user to switch between
 /// supported languages (Italian, English, Spanish, French, German) with real-time UI updates.
 class LanguageSelectorButton extends StatelessWidget {
@@ -24,6 +26,7 @@ class LanguageSelectorButton extends StatelessWidget {
     HapticFeedback.selectionClick();
     final settingsProvider = context.read<SettingsProvider>();
     final l10n = context.l10n;
+    final isWindows = AppPlatform.isWindows;
 
     showModalBottomSheet(
       context: context,
@@ -58,7 +61,9 @@ class LanguageSelectorButton extends StatelessWidget {
                 ...AppLocalizations.supportedLanguages.map((lang) {
                   final isSelected = current == lang.code;
                   return ListTile(
-                    leading: Text(lang.flag, style: const TextStyle(fontSize: 22)),
+                    leading: isWindows
+                        ? null
+                        : Text(lang.flag, style: const TextStyle(fontSize: 22)),
                     title: Text(
                       lang.nativeName,
                       style: TextStyle(
@@ -97,6 +102,7 @@ class LanguageSelectorButton extends StatelessWidget {
       (l) => l.code == currentLangCode,
       orElse: () => AppLocalizations.supportedLanguages.first,
     );
+    final isWindows = AppPlatform.isWindows;
 
     return Material(
       color: Colors.transparent,
@@ -104,7 +110,7 @@ class LanguageSelectorButton extends StatelessWidget {
         onTap: () => _showLanguagePicker(context),
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: AppColors.surfaceElevated.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(12),
@@ -113,20 +119,37 @@ class LanguageSelectorButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                currentMeta.flag,
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                currentMeta.code.toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
+              if (isWindows) ...[
+                const Icon(
+                  Icons.language_rounded,
+                  size: 16,
+                  color: AppColors.primaryLight,
                 ),
-              ),
+                const SizedBox(width: 6),
+                Text(
+                  currentMeta.nativeName,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  currentMeta.flag,
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  currentMeta.code.toUpperCase(),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
               const SizedBox(width: 4),
               const Icon(
                 Icons.arrow_drop_down_rounded,
@@ -140,3 +163,5 @@ class LanguageSelectorButton extends StatelessWidget {
     );
   }
 }
+
+

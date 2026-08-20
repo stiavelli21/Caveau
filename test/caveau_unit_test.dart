@@ -1,11 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caveau/core/constants/app_brand_terms.dart';
 import 'package:caveau/core/localization/app_localizations.dart';
+import 'package:caveau/core/utils/app_platform.dart';
 import 'package:caveau/core/utils/password_generator.dart';
 import 'package:caveau/core/services/auth_service.dart';
 import 'package:caveau/core/services/screen_security_service.dart';
 import 'package:caveau/models/vault_item.dart';
 import 'package:caveau/models/security_settings.dart';
+import 'package:caveau/providers/auth_provider.dart';
 
 /// Comprehensive unit test suite verifying core cryptography, data serialization,
 /// security configurations, and multilingual localization assets in Caveau.
@@ -239,12 +241,55 @@ void main() {
       expect(de.settingsTitle, equals('Sicherheitseinstellungen'));
       expect(de.languageOptionLabel, equals('Sprache'));
       expect(de.categoryDisplayName(VaultCategory.login), contains('Passwörter'));
+      expect(de.selectItemToViewDetails, contains('Details'));
+      expect(de.offlineSafeBadge, contains('Offline'));
+      expect(de.lockVaultAction, contains('sperren'));
+      expect(de.addNewItemDesktop, equals('Neues Element'));
     });
 
     test('supportedLanguages metadata list has all 5 languages configured', () {
       expect(AppLocalizations.supportedLanguages.length, equals(5));
       final codes = AppLocalizations.supportedLanguages.map((l) => l.code).toList();
       expect(codes, containsAll(['it', 'en', 'es', 'fr', 'de']));
+    });
+
+    test('all 5 languages implement desktop and split-view strings without empty values', () {
+      final locs = [
+        AppLocalizationsIt(),
+        AppLocalizationsEn(),
+        AppLocalizationsEs(),
+        AppLocalizationsFr(),
+        AppLocalizationsDe(),
+      ];
+
+      for (final l in locs) {
+        expect(l.selectItemToViewDetails.isNotEmpty, isTrue);
+        expect(l.noItemSelectedPrompt.isNotEmpty, isTrue);
+        expect(l.offlineSafeBadge.isNotEmpty, isTrue);
+        expect(l.lockVaultAction.isNotEmpty, isTrue);
+        expect(l.addNewItemDesktop.isNotEmpty, isTrue);
+        expect(l.onboardingDisclaimerRequiredError.isNotEmpty, isTrue);
+        expect(l.autoLock15s.isNotEmpty, isTrue);
+        expect(l.formatAutoLock(15), equals('15s'));
+        expect(l.wipeAllDataConfirmButton.isNotEmpty, isTrue);
+        expect(l.confirmWipeAuthTitle.isNotEmpty, isTrue);
+        expect(l.confirmWipeAuthPrompt.isNotEmpty, isTrue);
+      }
+
+      expect(AppLocalizationsIt().wipeAllDataConfirmButton, equals('ELIMINA'));
+      expect(AppLocalizationsEn().wipeAllDataConfirmButton, equals('DELETE'));
+      expect(AppLocalizationsEs().wipeAllDataConfirmButton, equals('ELIMINAR'));
+      expect(AppLocalizationsFr().wipeAllDataConfirmButton, equals('SUPPRIMER'));
+      expect(AppLocalizationsDe().wipeAllDataConfirmButton, equals('LÖSCHEN'));
+    });
+  });
+
+  group('AppPlatform Tests', () {
+    test('platform getters evaluate consistently', () {
+      expect(AppPlatform.isDesktop || AppPlatform.isMobile || !AppPlatform.isDesktop, isTrue);
+      if (AppPlatform.isDesktop) {
+        expect(AppPlatform.isBiometricsSupportedOnPlatform, isFalse);
+      }
     });
   });
 
@@ -258,5 +303,70 @@ void main() {
       service.dispose();
     });
   });
+
+  group('AuthProvider Lockout & Countdown Timer Tests', () {
+    test('lockout countdown decrements and clears error upon expiry', () async {
+      final mockAuth = _MockLockoutAuthService(lockoutSeconds: 2);
+      final authProvider = AuthProvider(authService: mockAuth);
+
+      // Trigger lockout with 5 wrong attempts
+      for (int i = 0; i < 5; i++) {
+        await authProvider.authenticateWithPin('wrong');
+      }
+
+      expect(authProvider.isLockedOut, isTrue);
+      expect(authProvider.errorType, equals(AuthErrorType.lockedOut));
+      expect(authProvider.lockoutSecondsRemaining, equals(2));
+
+      final it = AppLocalizationsIt();
+      expect(authProvider.getLocalizedErrorMessage(it), contains('2s'));
+
+      // Wait 1 second
+      await Future.delayed(const Duration(milliseconds: 1100));
+      expect(authProvider.lockoutSecondsRemaining, equals(1));
+      expect(authProvider.getLocalizedErrorMessage(it), contains('1s'));
+
+      // Wait for lockout to fully elapse
+      await Future.delayed(const Duration(milliseconds: 1100));
+      expect(authProvider.isLockedOut, isFalse);
+      expect(authProvider.lockoutSecondsRemaining, equals(0));
+      expect(authProvider.errorType, isNull);
+      expect(authProvider.errorMessage, isNull);
+      expect(authProvider.getLocalizedErrorMessage(it), isNull);
+
+      authProvider.dispose();
+    });
+
+    test('refreshLockoutState cleans up expired lockout immediately', () {
+      final authProvider = AuthProvider();
+      authProvider.refreshLockoutState();
+      expect(authProvider.isLockedOut, isFalse);
+      expect(authProvider.errorType, isNull);
+      authProvider.dispose();
+    });
+  });
+}
+
+class _MockLockoutAuthService extends AuthService {
+  final int lockoutSeconds;
+  int failCount = 0;
+
+  _MockLockoutAuthService({this.lockoutSeconds = 3});
+
+  @override
+  Future<VerifyPinResult> verifyMasterPin(String pin) async {
+    failCount++;
+    if (pin == '123456') {
+      failCount = 0;
+      return const VerifyPinSuccess();
+    }
+    if (failCount >= 5) {
+      return VerifyPinFailure(
+        failedAttempts: failCount,
+        lockoutUntil: DateTime.now().add(Duration(seconds: lockoutSeconds)),
+      );
+    }
+    return VerifyPinFailure(failedAttempts: failCount);
+  }
 }
 

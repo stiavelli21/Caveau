@@ -66,12 +66,16 @@ abstract class AppLocalizations {
   String get insertMasterPinHint;
   String get unlockVaultButton;
   String get unlockWithBiometricsButton;
+  String get usePinInsteadButton;
   String get biometricPromptReason;
   String get biometricDisabledInSettings;
   String get biometricFailedOrCanceled;
   String get masterPinIncorrect;
   String pinAttemptsRemaining(int remaining);
   String lockoutTimeRemaining(int seconds);
+  String pinWipeWarning(int remaining);
+  String get autoWipeTriggered;
+  String get autoWipeDialogTitle;
   String get currentPinInvalid;
 
   // --- Onboarding Screen ---
@@ -244,6 +248,7 @@ abstract class AppLocalizations {
   String get backupPasswordFieldLabel;
   String get confirmBackupPasswordFieldLabel;
   String get backupPasswordMinCharsError;
+  String get backupPasswordTooWeakError;
   String get backupPasswordsDoNotMatchError;
   String get backupGeneratedDialogTitle;
   String get backupCopyWarning;
@@ -256,6 +261,8 @@ abstract class AppLocalizations {
   String get wipeAllDataWarning1;
   String get wipeAllDataWarning2;
   String get wipeAllDataConfirmButton;
+  String get confirmWipeAuthTitle;
+  String get confirmWipeAuthPrompt;
 
   // Auto-lock & Clipboard picker labels
   String formatAutoLock(int seconds);
@@ -263,6 +270,7 @@ abstract class AppLocalizations {
   String get autoLockPickerTitle;
   String get clipboardPickerTitle;
   String get autoLockImmediate;
+  String get autoLock15s;
   String get autoLock30s;
   String get autoLock1m;
   String get autoLock5m;
@@ -288,6 +296,7 @@ abstract class AppLocalizations {
   String get onboardingInfoPrivacyPolicyTitle;
   String get onboardingInfoPrivacyPolicyDesc;
   String get onboardingDisclaimerCheckbox;
+  String get onboardingDisclaimerRequiredError;
   String get openSourceGitHubButton;
   String get viewPrivacyPolicyButton;
   String get continueToMasterPinButton;
@@ -301,6 +310,13 @@ abstract class AppLocalizations {
   String get backupSecurityGuideTileSubtitle;
   String get backupSecurityGuideDialogTitle;
   String get backupSecurityGuideDialogContent;
+
+  // --- Desktop & Split-View ---
+  String get selectItemToViewDetails;
+  String get noItemSelectedPrompt;
+  String get offlineSafeBadge;
+  String get lockVaultAction;
+  String get addNewItemDesktop;
 }
 
 /// ============================================================================
@@ -328,6 +344,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get unlockWithBiometricsButton => 'Sblocca con Biometria / ${AppBrandTerms.faceId}';
 
   @override
+  String get usePinInsteadButton => 'Usa ${AppBrandTerms.pinMaster} invece';
+
+  @override
   String get biometricPromptReason => 'Autenticati per accedere a ${AppBrandTerms.appName}';
 
   @override
@@ -344,6 +363,15 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String lockoutTimeRemaining(int seconds) => 'Troppi tentativi falliti. Riprova tra ${seconds}s';
+
+  @override
+  String pinWipeWarning(int remaining) => '⚠️ Ancora $remaining tentativi prima della cancellazione automatica del vault!';
+
+  @override
+  String get autoWipeTriggered => 'Troppi tentativi falliti: il vault è stato cancellato automaticamente per proteggere i tuoi dati.';
+
+  @override
+  String get autoWipeDialogTitle => 'Vault Cancellato';
 
   @override
   String get currentPinInvalid => '${AppBrandTerms.pinMaster} attuale non valido';
@@ -846,7 +874,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get confirmBackupPasswordFieldLabel => 'Conferma ${AppBrandTerms.password.toLowerCase()} di backup';
 
   @override
-  String get backupPasswordMinCharsError => 'Inserisci una ${AppBrandTerms.password.toLowerCase()} di almeno 6 caratteri';
+  String get backupPasswordMinCharsError => 'Inserisci una ${AppBrandTerms.password.toLowerCase()} di almeno 8 caratteri';
+
+  @override
+  String get backupPasswordTooWeakError => 'La ${AppBrandTerms.password.toLowerCase()} deve contenere almeno una lettera e un numero';
 
   @override
   String get backupPasswordsDoNotMatchError => 'Le ${AppBrandTerms.password.toLowerCase()} di backup non corrispondono';
@@ -884,7 +915,14 @@ class AppLocalizationsIt extends AppLocalizations {
       'Tutte le ${AppBrandTerms.password.toLowerCase()}, carte, note, ${AppBrandTerms.pinMaster} e impostazioni salvate.';
 
   @override
-  String get wipeAllDataConfirmButton => 'Elimina Tutto Definitivamente';
+  String get wipeAllDataConfirmButton => 'ELIMINA';
+
+  @override
+  String get confirmWipeAuthTitle => 'Conferma Eliminazione';
+
+  @override
+  String get confirmWipeAuthPrompt =>
+      'Inserisci il tuo ${AppBrandTerms.pinMaster} o usa la biometria per autorizzare la cancellazione totale.';
 
   @override
   String formatAutoLock(int seconds) {
@@ -907,6 +945,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get autoLockImmediate => 'Immediato (all\'uscita)';
+
+  @override
+  String get autoLock15s => 'Dopo 15 secondi';
 
   @override
   String get autoLock30s => 'Dopo 30 secondi';
@@ -972,6 +1013,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get onboardingDisclaimerCheckbox => 'Ho compreso che sono l\'unico custode del mio ${AppBrandTerms.pinMaster} e dei miei backup.';
 
   @override
+  String get onboardingDisclaimerRequiredError => 'È necessario confermare la presa visione dell\'avviso di responsabilità prima di procedere.';
+
+  @override
   String get openSourceGitHubButton => 'Vedi su ${AppBrandTerms.github}';
 
   @override
@@ -1009,6 +1053,21 @@ class AppLocalizationsIt extends AppLocalizations {
       '1. Architettura Offline: ${AppBrandTerms.appName} non usa server. I dati sono protetti da ${AppBrandTerms.androidKeystore} con crittografia ${AppBrandTerms.aes256}.\n\n'
       '2. Nessun Recupero: Non esiste una funzione di recupero password. Solo tu conosci il tuo ${AppBrandTerms.pinMaster}.\n\n'
       '3. Backup Cifrati: Il file di backup esportato è cifrato con password e protetto da hash ${AppBrandTerms.sha256}. Salvalo su una chiavetta o sul tuo cloud personale per non perdere mai le tue credenziali.';
+
+  @override
+  String get selectItemToViewDetails => 'Seleziona un elemento per visualizzarne i dettagli';
+
+  @override
+  String get noItemSelectedPrompt => 'Nessun elemento selezionato';
+
+  @override
+  String get offlineSafeBadge => '100% Offline & Protetto';
+
+  @override
+  String get lockVaultAction => 'Blocca ${AppBrandTerms.appName}';
+
+  @override
+  String get addNewItemDesktop => 'Nuovo elemento';
 }
 
 /// ============================================================================
@@ -1036,6 +1095,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlockWithBiometricsButton => 'Unlock with Biometrics / ${AppBrandTerms.faceId}';
 
   @override
+  String get usePinInsteadButton => 'Use ${AppBrandTerms.masterPin} instead';
+
+  @override
   String get biometricPromptReason => 'Authenticate to access ${AppBrandTerms.appName}';
 
   @override
@@ -1052,6 +1114,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockoutTimeRemaining(int seconds) => 'Too many failed attempts. Try again in ${seconds}s';
+
+  @override
+  String pinWipeWarning(int remaining) => '⚠️ $remaining attempt${remaining == 1 ? '' : 's'} left before automatic vault wipe!';
+
+  @override
+  String get autoWipeTriggered => 'Too many failed attempts: the vault has been automatically wiped to protect your data.';
+
+  @override
+  String get autoWipeDialogTitle => 'Vault Wiped';
 
   @override
   String get currentPinInvalid => 'Invalid current ${AppBrandTerms.masterPin}';
@@ -1554,7 +1625,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmBackupPasswordFieldLabel => 'Confirm backup ${AppBrandTerms.password.toLowerCase()}';
 
   @override
-  String get backupPasswordMinCharsError => 'Enter a ${AppBrandTerms.password.toLowerCase()} with at least 6 characters';
+  String get backupPasswordMinCharsError => 'Enter a ${AppBrandTerms.password.toLowerCase()} with at least 8 characters';
+
+  @override
+  String get backupPasswordTooWeakError => 'The ${AppBrandTerms.password.toLowerCase()} must contain at least one letter and one number';
 
   @override
   String get backupPasswordsDoNotMatchError => 'Backup ${AppBrandTerms.password.toLowerCase()}s do not match';
@@ -1592,7 +1666,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'All stored ${AppBrandTerms.password.toLowerCase()}s, cards, notes, ${AppBrandTerms.masterPin}, and app settings.';
 
   @override
-  String get wipeAllDataConfirmButton => 'Permanently Delete Everything';
+  String get wipeAllDataConfirmButton => 'DELETE';
+
+  @override
+  String get confirmWipeAuthTitle => 'Confirm Deletion';
+
+  @override
+  String get confirmWipeAuthPrompt =>
+      'Enter your ${AppBrandTerms.masterPin} or use biometrics to authorize complete data wipe.';
 
   @override
   String formatAutoLock(int seconds) {
@@ -1615,6 +1696,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoLockImmediate => 'Immediately on exit';
+
+  @override
+  String get autoLock15s => 'After 15 seconds';
 
   @override
   String get autoLock30s => 'After 30 seconds';
@@ -1680,6 +1764,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingDisclaimerCheckbox => 'I understand that I am the sole custodian of my ${AppBrandTerms.masterPin} and backups.';
 
   @override
+  String get onboardingDisclaimerRequiredError => 'You must confirm that you have read and accepted the responsibility disclaimer before proceeding.';
+
+  @override
   String get openSourceGitHubButton => 'View on ${AppBrandTerms.github}';
 
   @override
@@ -1717,6 +1804,21 @@ class AppLocalizationsEn extends AppLocalizations {
       '1. Offline Architecture: ${AppBrandTerms.appName} uses no servers. Data is protected by ${AppBrandTerms.androidKeystore} with ${AppBrandTerms.aes256} encryption.\n\n'
       '2. No Recovery: There is no password reset mechanism. Only you know your ${AppBrandTerms.masterPin}.\n\n'
       '3. Encrypted Backups: Exported backup files are password-encrypted and protected by ${AppBrandTerms.sha256} hash. Save it to a USB drive or personal cloud to prevent data loss.';
+
+  @override
+  String get selectItemToViewDetails => 'Select an item to view its details';
+
+  @override
+  String get noItemSelectedPrompt => 'No item selected';
+
+  @override
+  String get offlineSafeBadge => '100% Offline & Protected';
+
+  @override
+  String get lockVaultAction => 'Lock ${AppBrandTerms.appName}';
+
+  @override
+  String get addNewItemDesktop => 'New Item';
 }
 
 /// ============================================================================
@@ -1744,6 +1846,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get unlockWithBiometricsButton => 'Desbloquear con Biometría / ${AppBrandTerms.faceId}';
 
   @override
+  String get usePinInsteadButton => 'Usar ${AppBrandTerms.masterPin} en su lugar';
+
+  @override
   String get biometricPromptReason => 'Autentícate para acceder a ${AppBrandTerms.appName}';
 
   @override
@@ -1760,6 +1865,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String lockoutTimeRemaining(int seconds) => 'Demasiados intentos fallidos. Inténtalo en ${seconds}s';
+
+  @override
+  String pinWipeWarning(int remaining) => '⚠️ Quedan $remaining intento${remaining == 1 ? '' : 's'} antes del borrado automático del vault!';
+
+  @override
+  String get autoWipeTriggered => 'Demasiados intentos fallidos: el vault ha sido borrado automáticamente para proteger tus datos.';
+
+  @override
+  String get autoWipeDialogTitle => 'Vault Borrado';
 
   @override
   String get currentPinInvalid => '${AppBrandTerms.masterPin} actual no válido';
@@ -2262,7 +2376,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get confirmBackupPasswordFieldLabel => 'Confirmar contraseña de la copia';
 
   @override
-  String get backupPasswordMinCharsError => 'Introduce una contraseña de al menos 6 caracteres';
+  String get backupPasswordMinCharsError => 'Introduce una contraseña de al menos 8 caracteres';
+
+  @override
+  String get backupPasswordTooWeakError => 'La contraseña debe contener al menos una letra y un número';
 
   @override
   String get backupPasswordsDoNotMatchError => 'Las contraseñas de la copia no coinciden';
@@ -2300,7 +2417,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Todas las contraseñas, tarjetas, notas, ${AppBrandTerms.masterPin} y ajustes guardados.';
 
   @override
-  String get wipeAllDataConfirmButton => 'Eliminar Todo Definitivamente';
+  String get wipeAllDataConfirmButton => 'ELIMINAR';
+
+  @override
+  String get confirmWipeAuthTitle => 'Confirmar Eliminación';
+
+  @override
+  String get confirmWipeAuthPrompt =>
+      'Introduce tu ${AppBrandTerms.masterPin} o usa biometría para autorizar el borrado total.';
 
   @override
   String formatAutoLock(int seconds) {
@@ -2323,6 +2447,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get autoLockImmediate => 'Inmediato (al salir)';
+
+  @override
+  String get autoLock15s => 'Tras 15 segundos';
 
   @override
   String get autoLock30s => 'Tras 30 segundos';
@@ -2388,6 +2515,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get onboardingDisclaimerCheckbox => 'Entiendo que soy el único custodio de mi ${AppBrandTerms.masterPin} y de mis copias de seguridad.';
 
   @override
+  String get onboardingDisclaimerRequiredError => 'Debe confirmar que comprende el aviso de responsabilidad antes de continuar.';
+
+  @override
   String get openSourceGitHubButton => 'Ver en ${AppBrandTerms.github}';
 
   @override
@@ -2425,6 +2555,21 @@ class AppLocalizationsEs extends AppLocalizations {
       '1. Arquitectura Offline: ${AppBrandTerms.appName} no usa servidores. Los datos están protegidos por ${AppBrandTerms.androidKeystore} con cifrado ${AppBrandTerms.aes256}.\n\n'
       '2. Sin Recuperación: No existe mecanismo de recuperación. Solo tú conoces tu ${AppBrandTerms.masterPin}.\n\n'
       '3. Copias Cifradas: El archivo exportado está cifrado con contraseña y protegido con ${AppBrandTerms.sha256}. Guárdalo en un pendrive o nube personal para evitar pérdidas.';
+
+  @override
+  String get selectItemToViewDetails => 'Selecciona un elemento para ver sus detalles';
+
+  @override
+  String get noItemSelectedPrompt => 'Ningún elemento seleccionado';
+
+  @override
+  String get offlineSafeBadge => '100% Offline y Protegido';
+
+  @override
+  String get lockVaultAction => 'Bloquear ${AppBrandTerms.appName}';
+
+  @override
+  String get addNewItemDesktop => 'Nuevo elemento';
 }
 
 /// ============================================================================
@@ -2452,6 +2597,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get unlockWithBiometricsButton => 'Déverrouiller avec Biométrie / ${AppBrandTerms.faceId}';
 
   @override
+  String get usePinInsteadButton => 'Utiliser le ${AppBrandTerms.masterPin} à la place';
+
+  @override
   String get biometricPromptReason => 'Authentifiez-vous pour accéder à ${AppBrandTerms.appName}';
 
   @override
@@ -2468,6 +2616,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String lockoutTimeRemaining(int seconds) => 'Trop de tentatives échouées. Réessayez dans ${seconds}s';
+
+  @override
+  String pinWipeWarning(int remaining) => '⚠️ Encore $remaining tentative${remaining == 1 ? '' : 's'} avant la suppression automatique du vault !';
+
+  @override
+  String get autoWipeTriggered => 'Trop de tentatives échouées : le vault a été supprimé automatiquement pour protéger vos données.';
+
+  @override
+  String get autoWipeDialogTitle => 'Vault Supprimé';
 
   @override
   String get currentPinInvalid => '${AppBrandTerms.masterPin} actuel non valide';
@@ -2970,7 +3127,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get confirmBackupPasswordFieldLabel => 'Confirmer le mot de passe de sauvegarde';
 
   @override
-  String get backupPasswordMinCharsError => 'Saisissez un mot de passe d\'au moins 6 caractères';
+  String get backupPasswordMinCharsError => 'Saisissez un mot de passe d\'au moins 8 caractères';
+
+  @override
+  String get backupPasswordTooWeakError => 'Le mot de passe doit contenir au moins une lettre et un chiffre';
 
   @override
   String get backupPasswordsDoNotMatchError => 'Les mots de passe de sauvegarde ne correspondent pas';
@@ -3008,7 +3168,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Tous les mots de passe, cartes, notes, ${AppBrandTerms.masterPin} et paramètres sauvegardés.';
 
   @override
-  String get wipeAllDataConfirmButton => 'Tout Supprimer Définitivement';
+  String get wipeAllDataConfirmButton => 'SUPPRIMER';
+
+  @override
+  String get confirmWipeAuthTitle => 'Confirmer la Suppression';
+
+  @override
+  String get confirmWipeAuthPrompt =>
+      'Entrez votre ${AppBrandTerms.masterPin} ou utilisez la biométrie pour autoriser l\'effacement total.';
 
   @override
   String formatAutoLock(int seconds) {
@@ -3031,6 +3198,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get autoLockImmediate => 'Immédiat (à la sortie)';
+
+  @override
+  String get autoLock15s => 'Après 15 secondes';
 
   @override
   String get autoLock30s => 'Après 30 secondes';
@@ -3096,6 +3266,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get onboardingDisclaimerCheckbox => 'Je comprends que je suis le seul gardien de mon ${AppBrandTerms.masterPin} et de mes sauvegardes.';
 
   @override
+  String get onboardingDisclaimerRequiredError => 'Vous devez confirmer avoir pris connaissance de la clause de responsabilité pour continuer.';
+
+  @override
   String get openSourceGitHubButton => 'Voir sur ${AppBrandTerms.github}';
 
   @override
@@ -3133,6 +3306,21 @@ class AppLocalizationsFr extends AppLocalizations {
       '1. Architecture Hors-ligne : ${AppBrandTerms.appName} n\'utilise aucun serveur. Les données sont protégées par ${AppBrandTerms.androidKeystore} avec chiffrement ${AppBrandTerms.aes256}.\n\n'
       '2. Aucune Récupération : Il n\'existe aucune réinitialisation possible. Vous seul connaissez votre ${AppBrandTerms.masterPin}.\n\n'
       '3. Sauvegardes Chiffrées : Le fichier exporté est chiffré par mot de passe et protégé par hachage ${AppBrandTerms.sha256}. Enregistrez-le sur clé USB ou cloud personnel.';
+
+  @override
+  String get selectItemToViewDetails => 'Sélectionnez un élément pour afficher ses détails';
+
+  @override
+  String get noItemSelectedPrompt => 'Aucun élément sélectionné';
+
+  @override
+  String get offlineSafeBadge => '100% Hors ligne et protégé';
+
+  @override
+  String get lockVaultAction => 'Verrouiller ${AppBrandTerms.appName}';
+
+  @override
+  String get addNewItemDesktop => 'Nouvel élément';
 }
 
 /// ============================================================================
@@ -3160,6 +3348,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get unlockWithBiometricsButton => 'Mit Biometrie / ${AppBrandTerms.faceId} entsperren';
 
   @override
+  String get usePinInsteadButton => 'Stattdessen ${AppBrandTerms.masterPin} verwenden';
+
+  @override
   String get biometricPromptReason => 'Authentifizieren Sie sich für ${AppBrandTerms.appName}';
 
   @override
@@ -3176,6 +3367,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String lockoutTimeRemaining(int seconds) => 'Zu viele Fehlversuche. Versuchen Sie es in ${seconds}s erneut';
+
+  @override
+  String pinWipeWarning(int remaining) => '⚠️ Noch $remaining Versuch${remaining == 1 ? '' : 'e'} bis zur automatischen Vault-Löschung!';
+
+  @override
+  String get autoWipeTriggered => 'Zu viele Fehlversuche: Der Vault wurde automatisch gelöscht, um Ihre Daten zu schützen.';
+
+  @override
+  String get autoWipeDialogTitle => 'Vault gelöscht';
 
   @override
   String get currentPinInvalid => 'Aktuelle ${AppBrandTerms.masterPin} ungültig';
@@ -3678,7 +3878,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get confirmBackupPasswordFieldLabel => 'Backup-${AppBrandTerms.password} bestätigen';
 
   @override
-  String get backupPasswordMinCharsError => 'Geben Sie ein Passwort mit mindestens 6 Zeichen ein';
+  String get backupPasswordMinCharsError => 'Geben Sie ein Passwort mit mindestens 8 Zeichen ein';
+
+  @override
+  String get backupPasswordTooWeakError => 'Das Passwort muss mindestens einen Buchstaben und eine Zahl enthalten';
 
   @override
   String get backupPasswordsDoNotMatchError => 'Die Backup-${AppBrandTerms.password}er stimmen nicht überein';
@@ -3716,7 +3919,14 @@ class AppLocalizationsDe extends AppLocalizations {
       'Alle Passwörter, Karten, Notizen, ${AppBrandTerms.masterPin} und gespeicherten Einstellungen.';
 
   @override
-  String get wipeAllDataConfirmButton => 'Alles Dauerhaft Löschen';
+  String get wipeAllDataConfirmButton => 'LÖSCHEN';
+
+  @override
+  String get confirmWipeAuthTitle => 'Löschen Bestätigen';
+
+  @override
+  String get confirmWipeAuthPrompt =>
+      'Geben Sie Ihre ${AppBrandTerms.masterPin} ein oder nutzen Sie Biometrie, um das vollständige Löschen zu autorisieren.';
 
   @override
   String formatAutoLock(int seconds) {
@@ -3739,6 +3949,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get autoLockImmediate => 'Sofort beim Verlassen';
+
+  @override
+  String get autoLock15s => 'Nach 15 Sekunden';
 
   @override
   String get autoLock30s => 'Nach 30 Sekunden';
@@ -3804,6 +4017,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get onboardingDisclaimerCheckbox => 'Ich verstehe, dass ich der alleinige Hüter meiner ${AppBrandTerms.masterPin} und meiner Backups bin.';
 
   @override
+  String get onboardingDisclaimerRequiredError => 'Sie müssen den Haftungshinweis bestätigen, bevor Sie fortfahren können.';
+
+  @override
   String get openSourceGitHubButton => 'Auf ${AppBrandTerms.github} ansehen';
 
   @override
@@ -3841,6 +4057,21 @@ class AppLocalizationsDe extends AppLocalizations {
       '1. Offline-Architektur: ${AppBrandTerms.appName} verwendet keine Server. Daten werden durch ${AppBrandTerms.androidKeystore} mit ${AppBrandTerms.aes256}-Verschlüsselung geschützt.\n\n'
       '2. Keine Wiederherstellung: Es gibt keine Möglichkeit zur Passwort-Zurücksetzung. Nur Sie kennen Ihre ${AppBrandTerms.masterPin}.\n\n'
       '3. Verschlüsselte Backups: Die exportierte Datei ist passwortverschlüsselt und durch ${AppBrandTerms.sha256}-Hash geschützt. Speichern Sie sie auf einem USB-Stick oder in Ihrer privaten Cloud.';
+
+  @override
+  String get selectItemToViewDetails => 'Wählen Sie ein Element aus, um seine Details anzuzeigen';
+
+  @override
+  String get noItemSelectedPrompt => 'Kein Element ausgewählt';
+
+  @override
+  String get offlineSafeBadge => '100% Offline & Geschützt';
+
+  @override
+  String get lockVaultAction => '${AppBrandTerms.appName} sperren';
+
+  @override
+  String get addNewItemDesktop => 'Neues Element';
 }
 
 /// ============================================================================

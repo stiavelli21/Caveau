@@ -108,6 +108,8 @@ class CaveauApp extends StatefulWidget {
 }
 
 class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
   /// Timestamp recorded when the app transitioned into background/inactive state.
   DateTime? _pausedAt;
 
@@ -119,6 +121,9 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
 
   late final ScreenSecurityService _screenSecurityService;
   StreamSubscription<bool>? _screenCaptureSub;
+
+  /// In-app timer counting down user inactivity while in the foreground.
+  Timer? _inactivityTimer;
 
   @override
   void initState() {
@@ -149,13 +154,45 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    // Unregister lifecycle listener and screen capture subscription
+    // Unregister lifecycle listener, inactivity timer, and screen capture subscription
     WidgetsBinding.instance.removeObserver(this);
+    _inactivityTimer?.cancel();
+    _inactivityTimer = null;
     _screenCaptureSub?.cancel();
     if (widget.screenSecurityService == null) {
       _screenSecurityService.dispose();
     }
     super.dispose();
+  }
+
+  /// Automatically locks the vault, dismisses open modal dialogs/sheets, and returns to LockScreen.
+  void _lockVault() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = null;
+    _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+
+    if (!mounted) return;
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.status == AuthStatus.authenticated) {
+      authProvider.lock();
+    }
+  }
+
+  /// Resets and restarts the inactivity timer for the active session.
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = null;
+
+    if (!mounted) return;
+    final authProvider = context.read<AuthProvider>();
+    final settingsProvider = context.read<SettingsProvider>();
+    final autoLockSecs = settingsProvider.settings.autoLockSeconds;
+
+    if (authProvider.status == AuthStatus.authenticated &&
+        autoLockSecs > 0 &&
+        !_isBackgrounded) {
+      _inactivityTimer = Timer(Duration(seconds: autoLockSecs), _lockVault);
+    }
   }
 
   @override
@@ -171,6 +208,8 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden) {
       _pausedAt = DateTime.now();
+      _inactivityTimer?.cancel();
+      _inactivityTimer = null;
       setState(() {
         _isBackgrounded = true;
       });
@@ -178,7 +217,7 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
       // Immediate auto-lock (autoLockSeconds == 0)
       if (settings.autoLockSeconds == 0 &&
           authProvider.status == AuthStatus.authenticated) {
-        authProvider.lock();
+        _lockVault();
       }
     } else if (state == AppLifecycleState.resumed) {
       // Returned to foreground
@@ -201,8 +240,12 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
           settings.autoLockSeconds > 0) {
         final elapsed = DateTime.now().difference(_pausedAt!).inSeconds;
         if (elapsed >= settings.autoLockSeconds) {
-          authProvider.lock();
+          _lockVault();
+        } else {
+          _resetInactivityTimer();
         }
+      } else if (authProvider.status == AuthStatus.authenticated) {
+        _resetInactivityTimer();
       }
       _pausedAt = null;
     }
@@ -214,6 +257,18 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
     final settingsProvider = context.watch<SettingsProvider>();
     final privacyEnabled = settingsProvider.settings.privacyScreenEnabled;
 
+    // Manage in-app inactivity auto-lock timer
+    if (authProvider.status == AuthStatus.authenticated &&
+        settingsProvider.settings.autoLockSeconds > 0 &&
+        !_isBackgrounded) {
+      if (_inactivityTimer == null || !_inactivityTimer!.isActive) {
+        _resetInactivityTimer();
+      }
+    } else {
+      _inactivityTimer?.cancel();
+      _inactivityTimer = null;
+    }
+
     // Sync native OS FLAG_SECURE / screen protection with settings
     _screenSecurityService.setSecureFlag(privacyEnabled);
 
@@ -222,6 +277,7 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
         privacyEnabled;
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Caveau',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
@@ -234,15 +290,28 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
         GlobalCupertinoLocalizations.delegate,
       ],
       builder: (context, child) {
-        return PrivacyShield(
-          isShieldActive: shouldShowPrivacyShield,
-          child: child ?? const SizedBox.shrink(),
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => _resetInactivityTimer(),
+          onPointerMove: (_) => _resetInactivityTimer(),
+          onPointerHover: (_) => _resetInactivityTimer(),
+          onPointerPanZoomUpdate: (_) => _resetInactivityTimer(),
+          onPointerSignal: (_) => _resetInactivityTimer(),
+          child: Focus(
+            onKeyEvent: (node, event) {
+              _resetInactivityTimer();
+              return KeyEventResult.ignored;
+            },
+            child: PrivacyShield(
+              isShieldActive: shouldShowPrivacyShield,
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
         );
       },
       home: _buildHome(authProvider.status),
     );
   }
-
 
   /// Routes to the appropriate screen depending on current [AuthStatus].
   Widget _buildHome(AuthStatus status) {
@@ -257,6 +326,87 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
         return const LockScreen();
       case AuthStatus.authenticated:
         return const VaultHomeScreen();
+      case AuthStatus.autoWiped:
+        return const _AutoWipeNoticeScreen();
     }
+  }
+}
+
+/// Full-screen notification displayed when the vault has been auto-wiped
+/// after exceeding the maximum allowed failed PIN attempts.
+class _AutoWipeNoticeScreen extends StatelessWidget {
+  const _AutoWipeNoticeScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    // Show the notification once, then acknowledge and route to onboarding
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      final auth = context.read<AuthProvider>();
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF131B2E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFFEF4444)),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.security_rounded, color: Color(0xFFEF4444), size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  l10n.autoWipeDialogTitle,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            l10n.autoWipeTriggered,
+            style: const TextStyle(
+              color: Color(0xFFCBD5E1),
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6366F1),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  auth.acknowledgeAutoWipe();
+                },
+                child: const Text(
+                  'Ricomincia',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
   }
 }

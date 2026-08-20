@@ -1,8 +1,16 @@
 #include "flutter_window.h"
 
 #include <optional>
+#include <windows.h>
 
 #include "flutter/generated_plugin_registrant.h"
+
+// WDA_EXCLUDEFROMCAPTURE is available from Windows 10 2004 (build 19041).
+// Define it here with a guard so the code compiles on older SDKs as well;
+// SetWindowDisplayAffinity will fail silently on those versions.
+#ifndef WDA_EXCLUDEFROMCAPTURE
+#define WDA_EXCLUDEFROMCAPTURE 0x00000011
+#endif
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -26,6 +34,15 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+
+  // Security: Exclude the Caveau window from screen capture, screen recording,
+  // and PrintScreen on Windows 10 2004+ (build 19041) using WDA_EXCLUDEFROMCAPTURE.
+  // This is the Windows equivalent of Android FLAG_SECURE / iOS UIScreen capture detection.
+  // On older Windows versions SetWindowDisplayAffinity fails silently — no action needed.
+  HWND hwnd = GetHandle();
+  if (hwnd) {
+    SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
+  }
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();

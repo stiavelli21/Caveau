@@ -7,6 +7,7 @@ import '../../models/vault_item.dart';
 import '../../providers/vault_provider.dart';
 import '../generator/password_generator_screen.dart';
 import '../widgets/password_strength_bar.dart';
+import '../widgets/responsive_layout.dart';
 
 /// Form screen for creating or editing vault entries.
 /// 
@@ -273,6 +274,7 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final isEditing = widget.initialItem != null;
+    final isDesktop = isDesktopView(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -296,16 +298,21 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              16,
-              20,
-              MediaQuery.of(context).padding.bottom + 36,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                MediaQuery.of(context).padding.bottom + 36,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isDesktop ? 760 : double.infinity,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                 // Category Segmented Choice Chips Selector
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -601,6 +608,8 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

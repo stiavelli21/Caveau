@@ -10,6 +10,8 @@ import '../../providers/vault_provider.dart';
 import '../generator/password_generator_screen.dart';
 import '../security/security_audit_screen.dart';
 import '../settings/settings_screen.dart';
+import '../widgets/desktop_sidebar.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/vault_card.dart';
 import '../widgets/vault_logo.dart';
 import 'vault_detail_screen.dart';
@@ -17,13 +19,10 @@ import 'vault_editor_screen.dart';
 
 /// Primary dashboard screen displayed once authentication is successful.
 /// 
-/// Provides:
-/// - Top App Bar with audit health badge, password generator shortcut, settings, and instant vault lock
-/// - Live search bar filtering across title, username, website, and tags
-/// - Category and Favorites filter chips
-/// - Decrypted items list rendered with [VaultCard]
-/// - Empty state and no-search-results placeholders
-/// - Floating Action Button opening category picker modal for creating new entries
+/// Supports:
+/// - **Mobile Layout**: Standard portrait single-column list with bottom sheets and full-screen push navigation.
+/// - **Desktop / Horizontal Widescreen Layout**: Multi-pane split-view layout featuring a category navigation sidebar,
+///   a middle searchable master list, and a real-time detail pane with interactive controls.
 class VaultHomeScreen extends StatefulWidget {
   const VaultHomeScreen({super.key});
 
@@ -33,11 +32,12 @@ class VaultHomeScreen extends StatefulWidget {
 
 class _VaultHomeScreenState extends State<VaultHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  String? _selectedItemId;
 
   @override
   void initState() {
     super.initState();
-    // Load decrypted items and persistent settings into memory upon screen initial load
+    // Load decrypted items and persistent settings into memory upon initial load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<VaultProvider>().loadItems();
       context.read<SettingsProvider>().loadSettings();
@@ -174,13 +174,26 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           MaterialPageRoute(
             builder: (_) => VaultEditorScreen(preselectedCategory: category),
           ),
-        );
+        ).then((_) {
+          if (mounted) setState(() {});
+        });
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    return ResponsiveLayout(
+      mobile: (ctx) => _buildMobileLayout(ctx),
+      desktop: (ctx) => _buildDesktopLayout(ctx),
+    );
+  }
+
+  // ===========================================================================
+  // MOBILE VIEWPORT LAYOUT (Preserved 1:1)
+  // ===========================================================================
+
+  Widget _buildMobileLayout(BuildContext context) {
     final vaultProvider = context.watch<VaultProvider>();
     final settingsProvider = context.watch<SettingsProvider>();
     final authProvider = context.watch<AuthProvider>();
@@ -425,7 +438,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                             return VaultCard(
                               item: item,
                               clipboardClearSeconds:
-                                   settingsProvider.settings.clipboardClearSeconds,
+                                  settingsProvider.settings.clipboardClearSeconds,
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
@@ -447,6 +460,225 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
         tooltip: l10n.newItemFab,
         onPressed: () => _showAddCategoryPicker(context),
         child: const Icon(Icons.add_rounded, size: 28),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // DESKTOP HORIZONTAL SPLIT-VIEW LAYOUT
+  // ===========================================================================
+
+  Widget _buildDesktopLayout(BuildContext context) {
+    final vaultProvider = context.watch<VaultProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
+    final l10n = context.l10n;
+    final filteredItems = vaultProvider.filteredItems;
+
+    // Check if the selected item still exists in the vault
+    final isSelectedItemValid = _selectedItemId != null &&
+        vaultProvider.items.any((i) => i.id == _selectedItemId);
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final sidebarWidth = screenWidth >= 1600
+        ? 340.0
+        : (screenWidth >= 1200 ? 320.0 : 290.0);
+    final masterWidth = screenWidth >= 1600
+        ? 520.0
+        : (screenWidth >= 1200 ? 460.0 : 400.0);
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Row(
+        children: [
+          // Left Navigation & Category Filter Sidebar
+          DesktopSidebar(width: sidebarWidth),
+
+          // Middle Master Column: Search & Item List
+          SizedBox(
+            width: masterWidth,
+            child: Container(
+              decoration: const BoxDecoration(
+                border: Border(
+                  right: BorderSide(color: AppColors.border),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Top Search & Add Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (val) => vaultProvider.setSearchQuery(val),
+                            decoration: InputDecoration(
+                              hintText: l10n.searchHint,
+                              prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear_rounded, size: 18),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        vaultProvider.setSearchQuery('');
+                                      },
+                                    )
+                                  : null,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () => _showAddCategoryPicker(context),
+                          icon: const Icon(Icons.add_rounded, size: 18),
+                          label: Text(l10n.addNewItemDesktop),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Divider(height: 1, color: AppColors.border),
+
+                  // Master List
+                  Expanded(
+                    child: vaultProvider.isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : filteredItems.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.search_off_rounded,
+                                        size: 40,
+                                        color: AppColors.textMuted,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        vaultProvider.items.isEmpty
+                                            ? l10n.emptyVaultTitle
+                                            : l10n.noSearchResultsTitle,
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        vaultProvider.items.isEmpty
+                                            ? l10n.emptyVaultSubtitle
+                                            : l10n.noSearchResultsSubtitle,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                itemCount: filteredItems.length,
+                                itemBuilder: (context, index) {
+                                  final item = filteredItems[index];
+                                  final isSelected = item.id == _selectedItemId;
+                                  return VaultCard(
+                                    item: item,
+                                    isSelected: isSelected,
+                                    clipboardClearSeconds:
+                                        settingsProvider.settings.clipboardClearSeconds,
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedItemId = item.id;
+                                      });
+                                    },
+                                    onToggleFavorite: () {
+                                      vaultProvider.toggleFavorite(item.id);
+                                    },
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Right Detail Column: Selected Item Detail Pane or Empty Placeholder
+          Expanded(
+            child: isSelectedItemValid
+                ? VaultDetailView(
+                    key: ValueKey(_selectedItemId),
+                    itemId: _selectedItemId!,
+                    isPane: true,
+                    onDeleted: () {
+                      setState(() {
+                        _selectedItemId = null;
+                      });
+                    },
+                    onEdited: () {
+                      setState(() {});
+                    },
+                  )
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 88,
+                          height: 88,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceElevated,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Icon(
+                            Icons.lock_outline_rounded,
+                            size: 40,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          l10n.noItemSelectedPrompt,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          l10n.selectItemToViewDetails,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => _showAddCategoryPicker(context),
+                          icon: const Icon(Icons.add_rounded),
+                          label: Text(l10n.addItemButton),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }

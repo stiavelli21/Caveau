@@ -7,6 +7,7 @@ import '../../core/localization/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../widgets/language_selector_button.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/vault_logo.dart';
 
 /// First-launch onboarding screen for Caveau.
@@ -25,13 +26,20 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
+enum _OnboardingError {
+  none,
+  disclaimerRequired,
+  pinTooShort,
+  pinsDoNotMatch,
+}
+
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final TextEditingController _pinController = TextEditingController();
   final TextEditingController _confirmPinController = TextEditingController();
   bool _obscurePin = true;
   bool _enableBiometrics = true;
   bool _disclaimerAccepted = false;
-  String? _error;
+  _OnboardingError _error = _OnboardingError.none;
 
   @override
   void dispose() {
@@ -52,30 +60,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// Validates input criteria and initializes the Master PIN and security settings.
   void _submit() async {
-    final l10n = context.l10n;
     final pin = _pinController.text.trim();
     final confirm = _confirmPinController.text.trim();
 
     if (!_disclaimerAccepted) {
       setState(() {
-        _error = l10n.onboardingDisclaimerCheckbox;
+        _error = _OnboardingError.disclaimerRequired;
       });
       return;
     }
 
     if (pin.length < 4) {
       setState(() {
-        _error = l10n.minMasterPinError;
+        _error = _OnboardingError.pinTooShort;
       });
       return;
     }
 
     if (pin != confirm) {
       setState(() {
-        _error = l10n.pinsDoNotMatchError;
+        _error = _OnboardingError.pinsDoNotMatch;
       });
       return;
     }
+
+    setState(() {
+      _error = _OnboardingError.none;
+    });
 
     final authProvider = context.read<AuthProvider>();
     final settingsProvider = context.read<SettingsProvider>();
@@ -88,6 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final l10n = context.l10n;
+    final isDesktop = isDesktopView(context);
 
     return Scaffold(
       body: SafeArea(
@@ -104,16 +116,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  24,
-                  8,
-                  24,
-                  MediaQuery.of(context).padding.bottom + 40,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    24,
+                    8,
+                    24,
+                    MediaQuery.of(context).padding.bottom + 40,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: isDesktop ? 620 : double.infinity,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                     const SizedBox(height: 8),
                     // Vault Safe Icon
                     const Center(
@@ -269,7 +286,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     // USER AWARENESS & ACKNOWLEDGEMENT CHECKBOX
                     // ============================================================
                     InkWell(
-                      onTap: () => setState(() => _disclaimerAccepted = !_disclaimerAccepted),
+                      onTap: () {
+                        setState(() {
+                          _disclaimerAccepted = !_disclaimerAccepted;
+                          if (_disclaimerAccepted && _error == _OnboardingError.disclaimerRequired) {
+                            _error = _OnboardingError.none;
+                          }
+                        });
+                      },
                       borderRadius: BorderRadius.circular(14),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -291,7 +315,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              onChanged: (val) => setState(() => _disclaimerAccepted = val ?? false),
+                              onChanged: (val) {
+                                setState(() {
+                                  _disclaimerAccepted = val ?? false;
+                                  if (_disclaimerAccepted && _error == _OnboardingError.disclaimerRequired) {
+                                    _error = _OnboardingError.none;
+                                  }
+                                });
+                              },
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -365,14 +396,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         prefixIcon: const Icon(Icons.lock_reset_rounded),
                       ),
                     ),
-                    if (_error != null) ...[
+                    if (_error != _OnboardingError.none) ...[
                       const SizedBox(height: 12),
-                      Text(
-                        _error!,
-                        style: const TextStyle(
-                          color: AppColors.danger,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.danger.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.danger.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: AppColors.danger,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _getErrorMessage(l10n),
+                                style: const TextStyle(
+                                  color: AppColors.dangerLight,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -424,10 +477,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 
   /// Helper widget rendering a single informative tile with icon, title, description, and optional action.
@@ -478,4 +533,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ],
     );
   }
+
+  /// Returns the localized error message based on the current active error enum.
+  String _getErrorMessage(AppLocalizations l10n) {
+    switch (_error) {
+      case _OnboardingError.disclaimerRequired:
+        return l10n.onboardingDisclaimerRequiredError;
+      case _OnboardingError.pinTooShort:
+        return l10n.minMasterPinError;
+      case _OnboardingError.pinsDoNotMatch:
+        return l10n.pinsDoNotMatchError;
+      case _OnboardingError.none:
+        return '';
+    }
+  }
 }
+

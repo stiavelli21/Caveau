@@ -8,34 +8,53 @@ import '../../models/vault_item.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/vault_provider.dart';
 import '../widgets/password_strength_bar.dart';
+import '../widgets/swipe_back_wrapper.dart';
 import 'vault_editor_screen.dart';
 
 /// Screen displaying the complete decrypted details of a specific vault item.
-/// 
-/// Capabilities:
-/// - Category icon and color branding badge
-/// - Visual interactive credit card mockup for [VaultCategory.card]
-/// - Individual secret reveal/hide toggles (`••••••••`) for passwords, PINs, CVVs, and API keys
-/// - Live password entropy strength bar
-/// - Clipboard copy with automatic background clearing timer
-/// - Dynamic rendering of custom dynamic fields
-/// - Direct navigation to [VaultEditorScreen] for updating
-/// - Safe deletion dialog flow
-class VaultDetailScreen extends StatefulWidget {
-  /// Unique identifier of the vault item to inspect.
+/// Wraps [VaultDetailView] inside a full-screen scaffold for mobile navigation.
+class VaultDetailScreen extends StatelessWidget {
   final String itemId;
 
-  /// Creates a [VaultDetailScreen] instance.
   const VaultDetailScreen({
     super.key,
     required this.itemId,
   });
 
   @override
-  State<VaultDetailScreen> createState() => _VaultDetailScreenState();
+  Widget build(BuildContext context) {
+    return SwipeBackWrapper(
+      child: VaultDetailView(
+        itemId: itemId,
+        isPane: false,
+        onDeleted: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
 }
 
-class _VaultDetailScreenState extends State<VaultDetailScreen> {
+/// Decrypted vault item detail view.
+/// Can be rendered as a standalone full screen ([isPane] == false)
+/// or embedded inline within a desktop master-detail layout ([isPane] == true).
+class VaultDetailView extends StatefulWidget {
+  final String itemId;
+  final bool isPane;
+  final VoidCallback? onDeleted;
+  final VoidCallback? onEdited;
+
+  const VaultDetailView({
+    super.key,
+    required this.itemId,
+    this.isPane = false,
+    this.onDeleted,
+    this.onEdited,
+  });
+
+  @override
+  State<VaultDetailView> createState() => _VaultDetailViewState();
+}
+
+class _VaultDetailViewState extends State<VaultDetailView> {
   final Map<String, bool> _obscuredMap = {};
 
   /// Returns whether the specified field key is currently obscured.
@@ -208,7 +227,7 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
 
     if (confirmed == true && mounted) {
       await context.read<VaultProvider>().deleteItem(item.id);
-      if (mounted) Navigator.of(context).pop();
+      widget.onDeleted?.call();
     }
   }
 
@@ -261,9 +280,400 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
     );
 
     if (item.id == 'deleted') {
+      if (widget.isPane) {
+        return Center(
+          child: Text(
+            l10n.itemNotFound,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        );
+      }
       return Scaffold(
         appBar: AppBar(),
         body: Center(child: Text(l10n.itemNotFound)),
+      );
+    }
+
+    final contentWidget = SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        MediaQuery.of(context).padding.bottom + 32,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Pane Header (when displayed in desktop pane)
+          if (widget.isPane) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: item.isFavorite ? 'Remove Favorite' : 'Add Favorite',
+                  icon: Icon(
+                    item.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: item.isFavorite ? AppColors.warning : AppColors.textSecondary,
+                  ),
+                  onPressed: () => vaultProvider.toggleFavorite(item.id),
+                ),
+                IconButton(
+                  tooltip: l10n.editButton,
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => VaultEditorScreen(initialItem: item),
+                      ),
+                    ).then((_) => widget.onEdited?.call());
+                  },
+                ),
+                IconButton(
+                  tooltip: l10n.deleteButton,
+                  icon: const Icon(Icons.delete_outline, color: AppColors.dangerLight),
+                  onPressed: () => _delete(item),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Category Header Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _getCategoryColor(item.category).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _getCategoryColor(item.category).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Icon(
+                    _getCategoryIcon(item.category),
+                    color: _getCategoryColor(item.category),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  l10n.categoryDisplayName(item.category),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Card Mockup representation if Category is Card
+          if (item.category == VaultCategory.card) ...[
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF0F172A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(Icons.nfc_rounded, color: Colors.white70, size: 28),
+                      Icon(Icons.credit_card_rounded, color: Colors.white, size: 32),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    _isObscured('card_num')
+                        ? (item.cardNumber != null && item.cardNumber!.length >= 4
+                            ? '•••• •••• •••• ${item.cardNumber!.substring(item.cardNumber!.length - 4)}'
+                            : '•••• •••• •••• ••••')
+                        : (item.cardNumber ?? '---- ---- ---- ----'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 3,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.cardHolderCardMockup,
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 10,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            (item.cardHolder ?? l10n.cardHolderCardMockup).toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.cardExpiryCardMockup,
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 10,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            item.cardExpiry ?? '--/--',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // Sensitive Fields List
+          if (item.username != null && item.username!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.usernameLabel,
+              value: item.username!,
+              icon: Icons.person_outline_rounded,
+              onCopy: () => _copyField(l10n.usernameLabel, item.username!, autoClear),
+            ),
+
+          if (item.password != null && item.password!.isNotEmpty) ...[
+            _buildFieldTile(
+              title: l10n.passwordLabel,
+              value: item.password!,
+              icon: Icons.lock_outline_rounded,
+              isSecret: true,
+              isObscured: _isObscured('password'),
+              onToggleObscure: () => _toggleObscured('password'),
+              onCopy: () => _copyField(l10n.passwordLabel, item.password!, autoClear),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: PasswordStrengthBar(password: item.password!),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          if (item.websiteUrl != null && item.websiteUrl!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.websiteLabel,
+              value: item.websiteUrl!,
+              icon: Icons.link_rounded,
+              onOpen: () => _openUrl(item.websiteUrl!),
+              openTooltip: l10n.openInBrowserTooltip,
+              onCopy: () => _copyField(l10n.websiteLabel, item.websiteUrl!, 0),
+            ),
+
+          if (item.cardNumber != null && item.cardNumber!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.cardNumberLabel,
+              value: item.cardNumber!,
+              icon: Icons.credit_card_rounded,
+              isSecret: true,
+              isObscured: _isObscured('card_num'),
+              onToggleObscure: () => _toggleObscured('card_num'),
+              onCopy: () => _copyField(l10n.cardNumberLabel, item.cardNumber!, autoClear),
+            ),
+
+          if (item.cardCvv != null && item.cardCvv!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.cardCvvLabel,
+              value: item.cardCvv!,
+              icon: Icons.security_rounded,
+              isSecret: true,
+              isObscured: _isObscured('card_cvv'),
+              onToggleObscure: () => _toggleObscured('card_cvv'),
+              onCopy: () => _copyField(l10n.cardCvvLabel, item.cardCvv!, autoClear),
+            ),
+
+          if (item.cardPin != null && item.cardPin!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.cardPinLabel,
+              value: item.cardPin!,
+              icon: Icons.pin_rounded,
+              isSecret: true,
+              isObscured: _isObscured('card_pin'),
+              onToggleObscure: () => _toggleObscured('card_pin'),
+              onCopy: () => _copyField(l10n.cardPinLabel, item.cardPin!, autoClear),
+            ),
+
+          if (item.email != null && item.email!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.emailLabel,
+              value: item.email!,
+              icon: Icons.email_outlined,
+              onCopy: () => _copyField(l10n.emailLabel, item.email!, 0),
+            ),
+
+          if (item.phone != null && item.phone!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.phoneLabel,
+              value: item.phone!,
+              icon: Icons.phone_outlined,
+              onCopy: () => _copyField(l10n.phoneLabel, item.phone!, 0),
+            ),
+
+          if (item.idNumber != null && item.idNumber!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.idNumberLabel,
+              value: item.idNumber!,
+              icon: Icons.badge_outlined,
+              onCopy: () => _copyField(l10n.idNumberLabel, item.idNumber!, 0),
+            ),
+
+          if (item.apiKeySecret != null && item.apiKeySecret!.isNotEmpty)
+            _buildFieldTile(
+              title: l10n.apiKeySecretLabel,
+              value: item.apiKeySecret!,
+              icon: Icons.vpn_key_outlined,
+              isSecret: true,
+              isObscured: _isObscured('api_key'),
+              onToggleObscure: () => _toggleObscured('api_key'),
+              onCopy: () => _copyField(l10n.apiKeySecretLabel, item.apiKeySecret!, autoClear),
+            ),
+
+          // Dynamic Custom Fields
+          for (final cf in item.customFields)
+            _buildFieldTile(
+              title: cf.label,
+              value: cf.value,
+              icon: Icons.extension_outlined,
+              isSecret: cf.isSecret,
+              isObscured: cf.isSecret ? _isObscured(cf.id) : false,
+              onToggleObscure: cf.isSecret ? () => _toggleObscured(cf.id) : null,
+              onCopy: () => _copyField(cf.label, cf.value, cf.isSecret ? autoClear : 0),
+            ),
+
+          // Encrypted Notes Section
+          if (item.notes != null && item.notes!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        l10n.notesLabel,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy_rounded, size: 18),
+                        onPressed: () => _copyField(l10n.notesLabel, item.notes!, autoClear),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    item.notes!,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (item.category == VaultCategory.note) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Center(
+                child: Text(
+                  '- - -',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (widget.isPane) {
+      return Container(
+        color: AppColors.background,
+        child: contentWidget,
       );
     }
 
@@ -298,342 +708,10 @@ class _VaultDetailScreenState extends State<VaultDetailScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            16,
-            20,
-            MediaQuery.of(context).padding.bottom + 32,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Category Header Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _getCategoryColor(item.category).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: _getCategoryColor(item.category).withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Icon(
-                        _getCategoryIcon(item.category),
-                        color: _getCategoryColor(item.category),
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      l10n.categoryDisplayName(item.category),
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 20),
-
-            // Card Mockup representation if Category is Card
-            if (item.category == VaultCategory.card) ...[
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF0F172A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Icon(Icons.nfc_rounded, color: Colors.white70, size: 28),
-                        Icon(Icons.credit_card_rounded, color: Colors.white, size: 32),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      _isObscured('card_num')
-                          ? (item.cardNumber != null && item.cardNumber!.length >= 4
-                              ? '•••• •••• •••• ${item.cardNumber!.substring(item.cardNumber!.length - 4)}'
-                              : '•••• •••• •••• ••••')
-                          : (item.cardNumber ?? '---- ---- ---- ----'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 3,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.cardHolderCardMockup,
-                              style: const TextStyle(
-                                color: Colors.white60,
-                                fontSize: 10,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              (item.cardHolder ?? l10n.cardHolderCardMockup).toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.cardExpiryCardMockup,
-                              style: const TextStyle(
-                                color: Colors.white60,
-                                fontSize: 10,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              item.cardExpiry ?? '--/--',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            // Sensitive Fields List
-            if (item.username != null && item.username!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.usernameLabel,
-                value: item.username!,
-                icon: Icons.person_outline_rounded,
-                onCopy: () => _copyField(l10n.usernameLabel, item.username!, autoClear),
-              ),
-
-            if (item.password != null && item.password!.isNotEmpty) ...[
-              _buildFieldTile(
-                title: l10n.passwordLabel,
-                value: item.password!,
-                icon: Icons.lock_outline_rounded,
-                isSecret: true,
-                isObscured: _isObscured('password'),
-                onToggleObscure: () => _toggleObscured('password'),
-                onCopy: () => _copyField(l10n.passwordLabel, item.password!, autoClear),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: PasswordStrengthBar(password: item.password!),
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            if (item.websiteUrl != null && item.websiteUrl!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.websiteLabel,
-                value: item.websiteUrl!,
-                icon: Icons.link_rounded,
-                onOpen: () => _openUrl(item.websiteUrl!),
-                openTooltip: l10n.openInBrowserTooltip,
-                onCopy: () => _copyField(l10n.websiteLabel, item.websiteUrl!, 0),
-              ),
-
-            if (item.cardNumber != null && item.cardNumber!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.cardNumberLabel,
-                value: item.cardNumber!,
-                icon: Icons.credit_card_rounded,
-                isSecret: true,
-                isObscured: _isObscured('card_num'),
-                onToggleObscure: () => _toggleObscured('card_num'),
-                onCopy: () => _copyField(l10n.cardNumberLabel, item.cardNumber!, autoClear),
-              ),
-
-            if (item.cardCvv != null && item.cardCvv!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.cardCvvLabel,
-                value: item.cardCvv!,
-                icon: Icons.security_rounded,
-                isSecret: true,
-                isObscured: _isObscured('card_cvv'),
-                onToggleObscure: () => _toggleObscured('card_cvv'),
-                onCopy: () => _copyField(l10n.cardCvvLabel, item.cardCvv!, autoClear),
-              ),
-
-            if (item.cardPin != null && item.cardPin!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.cardPinLabel,
-                value: item.cardPin!,
-                icon: Icons.pin_rounded,
-                isSecret: true,
-                isObscured: _isObscured('card_pin'),
-                onToggleObscure: () => _toggleObscured('card_pin'),
-                onCopy: () => _copyField(l10n.cardPinLabel, item.cardPin!, autoClear),
-              ),
-
-            if (item.email != null && item.email!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.emailLabel,
-                value: item.email!,
-                icon: Icons.email_outlined,
-                onCopy: () => _copyField(l10n.emailLabel, item.email!, 0),
-              ),
-
-            if (item.phone != null && item.phone!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.phoneLabel,
-                value: item.phone!,
-                icon: Icons.phone_outlined,
-                onCopy: () => _copyField(l10n.phoneLabel, item.phone!, 0),
-              ),
-
-            if (item.idNumber != null && item.idNumber!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.idNumberLabel,
-                value: item.idNumber!,
-                icon: Icons.badge_outlined,
-                onCopy: () => _copyField(l10n.idNumberLabel, item.idNumber!, 0),
-              ),
-
-            if (item.apiKeySecret != null && item.apiKeySecret!.isNotEmpty)
-              _buildFieldTile(
-                title: l10n.apiKeySecretLabel,
-                value: item.apiKeySecret!,
-                icon: Icons.vpn_key_outlined,
-                isSecret: true,
-                isObscured: _isObscured('api_key'),
-                onToggleObscure: () => _toggleObscured('api_key'),
-                onCopy: () => _copyField(l10n.apiKeySecretLabel, item.apiKeySecret!, autoClear),
-              ),
-
-            // Dynamic Custom Fields
-            for (final cf in item.customFields)
-              _buildFieldTile(
-                title: cf.label,
-                value: cf.value,
-                icon: Icons.extension_outlined,
-                isSecret: cf.isSecret,
-                isObscured: cf.isSecret ? _isObscured(cf.id) : false,
-                onToggleObscure: cf.isSecret ? () => _toggleObscured(cf.id) : null,
-                onCopy: () => _copyField(cf.label, cf.value, cf.isSecret ? autoClear : 0),
-              ),
-
-            // Encrypted Notes Section
-            if (item.notes != null && item.notes!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item.category == VaultCategory.note
-                              ? l10n.notesLabel
-                              : l10n.notesLabel,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.copy_rounded, size: 18),
-                          onPressed: () => _copyField(l10n.notesLabel, item.notes!, autoClear),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    SelectableText(
-                      item.notes!,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ] else if (item.category == VaultCategory.note) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: const Center(
-                  child: Text(
-                    '- - -',
-                    style: TextStyle(
-                      color: AppColors.textMuted,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
+        child: contentWidget,
       ),
-    ),
-  );
-}
+    );
+  }
 
   /// Helper rendering an individual field tile with icon, title, secret masking, and quick-copy action.
   Widget _buildFieldTile({
