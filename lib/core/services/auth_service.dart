@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:local_auth/local_auth.dart';
@@ -182,7 +183,7 @@ class AuthService {
   /// Initializes and saves the Master PIN with a newly generated random salt.
   Future<void> setupMasterPin(String pin) async {
     final salt = generateSalt();
-    final hash = hashPin(pin, salt);
+    final hash = await Isolate.run(() => hashPin(pin, salt));
     await _storageService.saveMasterPin(hash: hash, salt: salt);
   }
 
@@ -217,13 +218,13 @@ class AuthService {
       return const VerifyPinFailure(failedAttempts: 0);
     }
 
-    // Check with current iteration count first
-    final computedHash = hashPin(pin, storedSalt);
+    // Check with current iteration count first in background isolate
+    final computedHash = await Isolate.run(() => hashPin(pin, storedSalt));
     bool isValid = computedHash == storedHash;
 
     // Transparent migration: try legacy 5,000-round hash if current fails
     if (!isValid) {
-      final legacyHash = hashPin(pin, storedSalt, iterations: _legacyHashIterations);
+      final legacyHash = await Isolate.run(() => hashPin(pin, storedSalt, iterations: _legacyHashIterations));
       if (legacyHash == storedHash) {
         // PIN is correct — migrate to new 200,000-round hash
         isValid = true;

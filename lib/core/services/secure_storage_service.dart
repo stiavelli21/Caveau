@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -302,12 +303,12 @@ class SecureStorageService {
     final salt = _randomBytes(32);
     final iv = _randomBytes(_gcmIvLength);
 
-    // Derive 256-bit key via PBKDF2-HMAC-SHA256 (600K rounds)
-    final key = _deriveKeyPbkdf2(backupPassword, salt);
-
-    // Encrypt with AES-256-GCM — tag is appended to ciphertext automatically
-    final plaintext = Uint8List.fromList(utf8.encode(payloadJson));
-    final ciphertext = _aesGcmEncrypt(key, iv, plaintext);
+    // Derive 256-bit key via PBKDF2-HMAC-SHA256 (600K rounds) and encrypt in background isolate
+    final ciphertext = await Isolate.run(() {
+      final key = _deriveKeyPbkdf2(backupPassword, salt);
+      final plaintext = Uint8List.fromList(utf8.encode(payloadJson));
+      return _aesGcmEncrypt(key, iv, plaintext);
+    });
 
     final envelope = {
       'caveau_backup': 'v2',
@@ -342,37 +343,41 @@ class SecureStorageService {
       final iv = base64Decode(backup['iv'] as String);
       final ciphertext = base64Decode(backup['data'] as String);
 
-      final key = _deriveKeyPbkdf2(backupPassword, salt);
-
-      try {
-        final plaintext = _aesGcmDecrypt(key, iv, ciphertext);
-        payloadJson = utf8.decode(plaintext);
-      } on InvalidCipherTextException {
-        // GCM authentication failed — wrong password or tampered data
-        throw const FormatException(
-            'Password errata o backup corrotto/manomesso');
-      }
+      payloadJson = await Isolate.run(() {
+        final key = _deriveKeyPbkdf2(backupPassword, salt);
+        try {
+          final plaintext = _aesGcmDecrypt(key, iv, ciphertext);
+          return utf8.decode(plaintext);
+        } on InvalidCipherTextException {
+          // GCM authentication failed — wrong password or tampered data
+          throw const FormatException(
+              'Password errata o backup corrotto/manomesso');
+        }
+      });
     } else if (version == 'v1') {
       // --- v1 Legacy: XOR stream cipher + SHA-256 checksum ---
       // Maintained for backward compatibility with backups created before v2.
       final String dataB64 = backup['data'] as String;
       final String checksum = backup['checksum'] as String;
-      final encryptedBytes = base64Decode(dataB64);
 
-      // Validate ciphertext integrity
-      final actualChecksum = sha256.convert(encryptedBytes).toString();
-      if (actualChecksum != checksum) {
-        throw const FormatException('Backup corrotto o manomesso');
-      }
+      payloadJson = await Isolate.run(() {
+        final encryptedBytes = base64Decode(dataB64);
 
-      // Decrypt v1 payload using derived password key (XOR)
-      final keyBytes = sha256.convert(utf8.encode(backupPassword)).bytes;
-      final decryptedBytes = List<int>.generate(
-        encryptedBytes.length,
-        (i) => encryptedBytes[i] ^ keyBytes[i % keyBytes.length],
-      );
+        // Validate ciphertext integrity
+        final actualChecksum = sha256.convert(encryptedBytes).toString();
+        if (actualChecksum != checksum) {
+          throw const FormatException('Backup corrotto o manomesso');
+        }
 
-      payloadJson = utf8.decode(decryptedBytes);
+        // Decrypt v1 payload using derived password key (XOR)
+        final keyBytes = sha256.convert(utf8.encode(backupPassword)).bytes;
+        final decryptedBytes = List<int>.generate(
+          encryptedBytes.length,
+          (i) => encryptedBytes[i] ^ keyBytes[i % keyBytes.length],
+        );
+
+        return utf8.decode(decryptedBytes);
+      });
     } else {
       throw const FormatException('Formato backup non riconosciuto');
     }

@@ -218,10 +218,12 @@ class SettingsScreen extends StatelessWidget {
     final pwdCtrl = TextEditingController();
     final confirmPwdCtrl = TextEditingController();
     bool obscurePwd = true;
+    bool isExporting = false;
     String? error;
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) {
           return AlertDialog(
@@ -251,6 +253,7 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   TextField(
                     controller: pwdCtrl,
+                    enabled: !isExporting,
                     obscureText: obscurePwd,
                     decoration: InputDecoration(
                       labelText: l10n.backupPasswordFieldLabel,
@@ -259,13 +262,14 @@ class SettingsScreen extends StatelessWidget {
                         icon: Icon(
                           obscurePwd ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                         ),
-                        onPressed: () => setState(() => obscurePwd = !obscurePwd),
+                        onPressed: isExporting ? null : () => setState(() => obscurePwd = !obscurePwd),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: confirmPwdCtrl,
+                    enabled: !isExporting,
                     obscureText: obscurePwd,
                     decoration: InputDecoration(
                       labelText: l10n.confirmBackupPasswordFieldLabel,
@@ -275,6 +279,26 @@ class SettingsScreen extends StatelessWidget {
                   if (error != null) ...[
                     const SizedBox(height: 10),
                     Text(error!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+                  ],
+                  if (isExporting) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            l10n.exportingBackupProgress,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ],
               ),
@@ -289,7 +313,7 @@ class SettingsScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      onPressed: () => Navigator.of(ctx).pop(),
+                      onPressed: isExporting ? null : () => Navigator.of(ctx).pop(),
                       child: Text(l10n.cancelButton),
                     ),
                   ),
@@ -300,37 +324,59 @@ class SettingsScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      onPressed: () async {
-                        final pwd = pwdCtrl.text.trim();
-                        final confirmPwd = confirmPwdCtrl.text.trim();
+                      onPressed: isExporting
+                          ? null
+                          : () async {
+                              final pwd = pwdCtrl.text.trim();
+                              final confirmPwd = confirmPwdCtrl.text.trim();
 
-                        if (pwd.length < 8) {
-                          setState(() => error = l10n.backupPasswordMinCharsError);
-                          return;
-                        }
+                              if (pwd.length < 8) {
+                                setState(() => error = l10n.backupPasswordMinCharsError);
+                                return;
+                              }
 
-                        // Require at least one letter and one digit for minimal strength
-                        final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(pwd);
-                        final hasDigit = RegExp(r'[0-9]').hasMatch(pwd);
-                        if (!hasLetter || !hasDigit) {
-                          setState(() => error = l10n.backupPasswordTooWeakError);
-                          return;
-                        }
+                              // Require at least one letter and one digit for minimal strength
+                              final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(pwd);
+                              final hasDigit = RegExp(r'[0-9]').hasMatch(pwd);
+                              if (!hasLetter || !hasDigit) {
+                                setState(() => error = l10n.backupPasswordTooWeakError);
+                                return;
+                              }
 
-                        if (pwd != confirmPwd) {
-                          setState(() => error = l10n.backupPasswordsDoNotMatchError);
-                          return;
-                        }
+                              if (pwd != confirmPwd) {
+                                setState(() => error = l10n.backupPasswordsDoNotMatchError);
+                                return;
+                              }
 
-                        final vault = context.read<VaultProvider>();
-                        final backupPayload = await vault.exportBackup(pwd);
+                              setState(() {
+                                error = null;
+                                isExporting = true;
+                              });
 
-                        if (context.mounted) {
-                          Navigator.of(ctx).pop();
-                          _showBackupPayloadDialog(context, backupPayload);
-                        }
-                      },
-                      child: Text(l10n.generateButton),
+                              try {
+                                final vault = context.read<VaultProvider>();
+                                final backupPayload = await vault.exportBackup(pwd);
+
+                                if (context.mounted) {
+                                  Navigator.of(ctx).pop();
+                                  _showBackupPayloadDialog(context, backupPayload);
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  setState(() {
+                                    error = e.toString();
+                                    isExporting = false;
+                                  });
+                                }
+                              }
+                            },
+                      child: isExporting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(l10n.generateButton),
                     ),
                   ),
                 ],
@@ -430,10 +476,12 @@ class SettingsScreen extends StatelessWidget {
     final l10n = context.l10n;
     final payloadCtrl = TextEditingController();
     final pwdCtrl = TextEditingController();
+    bool isRestoring = false;
     String? error;
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) {
           return AlertDialog(
@@ -456,6 +504,7 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   TextField(
                     controller: payloadCtrl,
+                    enabled: !isRestoring,
                     maxLines: 4,
                     decoration: InputDecoration(
                       labelText: l10n.pasteBackupDataLabel,
@@ -465,12 +514,33 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   TextField(
                     controller: pwdCtrl,
+                    enabled: !isRestoring,
                     obscureText: true,
                     decoration: InputDecoration(labelText: l10n.backupPasswordFieldLabel),
                   ),
                   if (error != null) ...[
                     const SizedBox(height: 10),
                     Text(error!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+                  ],
+                  if (isRestoring) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.info),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            l10n.restoringBackupProgress,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ],
               ),
@@ -485,7 +555,7 @@ class SettingsScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      onPressed: () => Navigator.of(ctx).pop(),
+                      onPressed: isRestoring ? null : () => Navigator.of(ctx).pop(),
                       child: Text(l10n.cancelButton),
                     ),
                   ),
@@ -496,29 +566,47 @@ class SettingsScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      onPressed: () async {
-                        final payload = payloadCtrl.text.trim();
-                        final pwd = pwdCtrl.text.trim();
+                      onPressed: isRestoring
+                          ? null
+                          : () async {
+                              final payload = payloadCtrl.text.trim();
+                              final pwd = pwdCtrl.text.trim();
 
-                        if (payload.isEmpty || pwd.isEmpty) {
-                          setState(() => error = l10n.fillAllFieldsError);
-                          return;
-                        }
+                              if (payload.isEmpty || pwd.isEmpty) {
+                                setState(() => error = l10n.fillAllFieldsError);
+                                return;
+                              }
 
-                        try {
-                          final vault = context.read<VaultProvider>();
-                          final count = await vault.importBackup(payload, pwd);
-                          if (context.mounted) {
-                            Navigator.of(ctx).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.itemsRestoredSuccess(count))),
-                            );
-                          }
-                        } catch (e) {
-                          setState(() => error = l10n.restoreFailedError);
-                        }
-                      },
-                      child: Text(l10n.restoreButton),
+                              setState(() {
+                                error = null;
+                                isRestoring = true;
+                              });
+
+                              try {
+                                final vault = context.read<VaultProvider>();
+                                final count = await vault.importBackup(payload, pwd);
+                                if (context.mounted) {
+                                  Navigator.of(ctx).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(l10n.itemsRestoredSuccess(count))),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  setState(() {
+                                    error = l10n.restoreFailedError;
+                                    isRestoring = false;
+                                  });
+                                }
+                              }
+                            },
+                      child: isRestoring
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(l10n.restoreButton),
                     ),
                   ),
                 ],
