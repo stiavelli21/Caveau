@@ -250,11 +250,13 @@ abstract class AppLocalizations {
   String get backupPasswordMinCharsError;
   String get backupPasswordTooWeakError;
   String get backupPasswordsDoNotMatchError;
+  String get exportingBackupProgress;
   String get backupGeneratedDialogTitle;
   String get backupCopyWarning;
   String get restoreBackupDialogTitle;
   String get pasteBackupDataLabel;
   String get fillAllFieldsError;
+  String get restoringBackupProgress;
   String itemsRestoredSuccess(int count);
   String get restoreFailedError;
   String get wipeAllDataDialogTitle;
@@ -883,6 +885,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get backupPasswordsDoNotMatchError => 'Le ${AppBrandTerms.password.toLowerCase()} di backup non corrispondono';
 
   @override
+  String get exportingBackupProgress => 'Cifratura ${AppBrandTerms.aes256} del backup in corso...';
+
+  @override
   String get backupGeneratedDialogTitle => 'Backup Cifrato Generato';
 
   @override
@@ -897,6 +902,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get fillAllFieldsError => 'Compila tutti i campi richiesti';
+
+  @override
+  String get restoringBackupProgress => 'Decifratura e verifica del backup in corso...';
 
   @override
   String itemsRestoredSuccess(int count) => '$count elementi ripristinati con successo!';
@@ -1634,6 +1642,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupPasswordsDoNotMatchError => 'Backup ${AppBrandTerms.password.toLowerCase()}s do not match';
 
   @override
+  String get exportingBackupProgress => 'Encrypting backup with ${AppBrandTerms.aes256}...';
+
+  @override
   String get backupGeneratedDialogTitle => 'Encrypted Backup Generated';
 
   @override
@@ -1648,6 +1659,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fillAllFieldsError => 'Please fill all required fields';
+
+  @override
+  String get restoringBackupProgress => 'Decrypting and verifying backup...';
 
   @override
   String itemsRestoredSuccess(int count) => '$count items successfully restored!';
@@ -2385,6 +2399,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupPasswordsDoNotMatchError => 'Las contraseñas de la copia no coinciden';
 
   @override
+  String get exportingBackupProgress => 'Cifrando copia de seguridad con ${AppBrandTerms.aes256}...';
+
+  @override
   String get backupGeneratedDialogTitle => 'Copia de Seguridad Cifrada Generada';
 
   @override
@@ -2399,6 +2416,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fillAllFieldsError => 'Rellena todos los campos requeridos';
+
+  @override
+  String get restoringBackupProgress => 'Descifrando y verificando copia de seguridad...';
 
   @override
   String itemsRestoredSuccess(int count) => '¡$count elementos restaurados con éxito!';
@@ -3136,6 +3156,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get backupPasswordsDoNotMatchError => 'Les mots de passe de sauvegarde ne correspondent pas';
 
   @override
+  String get exportingBackupProgress => 'Chiffrement de la sauvegarde avec ${AppBrandTerms.aes256}...';
+
+  @override
   String get backupGeneratedDialogTitle => 'Sauvegarde Chiffrée Générée';
 
   @override
@@ -3150,6 +3173,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get fillAllFieldsError => 'Veuillez remplir tous les champs requis';
+
+  @override
+  String get restoringBackupProgress => 'Déchiffrement et vérification de la sauvegarde...';
 
   @override
   String itemsRestoredSuccess(int count) => '$count éléments restaurés avec succès !';
@@ -3887,6 +3913,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get backupPasswordsDoNotMatchError => 'Die Backup-${AppBrandTerms.password}er stimmen nicht überein';
 
   @override
+  String get exportingBackupProgress => 'Verschlüsselung des Backups mit ${AppBrandTerms.aes256} läuft...';
+
+  @override
   String get backupGeneratedDialogTitle => 'Verschlüsseltes Backup Erstellt';
 
   @override
@@ -3901,6 +3930,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get fillAllFieldsError => 'Bitte füllen Sie alle erforderlichen Felder aus';
+
+  @override
+  String get restoringBackupProgress => 'Entschlüsselung und Überprüfung des Backups läuft...';
 
   @override
   String itemsRestoredSuccess(int count) => '$count Einträge erfolgreich wiederhergestellt!';

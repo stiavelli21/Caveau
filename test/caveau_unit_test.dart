@@ -1,9 +1,13 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:caveau/core/constants/app_brand_terms.dart';
 import 'package:caveau/core/localization/app_localizations.dart';
 import 'package:caveau/core/utils/app_platform.dart';
 import 'package:caveau/core/utils/password_generator.dart';
 import 'package:caveau/core/services/auth_service.dart';
+import 'package:caveau/core/services/secure_storage_service.dart';
 import 'package:caveau/core/services/screen_security_service.dart';
 import 'package:caveau/models/vault_item.dart';
 import 'package:caveau/models/security_settings.dart';
@@ -274,6 +278,8 @@ void main() {
         expect(l.wipeAllDataConfirmButton.isNotEmpty, isTrue);
         expect(l.confirmWipeAuthTitle.isNotEmpty, isTrue);
         expect(l.confirmWipeAuthPrompt.isNotEmpty, isTrue);
+        expect(l.exportingBackupProgress.isNotEmpty, isTrue);
+        expect(l.restoringBackupProgress.isNotEmpty, isTrue);
       }
 
       expect(AppLocalizationsIt().wipeAllDataConfirmButton, equals('ELIMINA'));
@@ -281,6 +287,108 @@ void main() {
       expect(AppLocalizationsEs().wipeAllDataConfirmButton, equals('ELIMINAR'));
       expect(AppLocalizationsFr().wipeAllDataConfirmButton, equals('SUPPRIMER'));
       expect(AppLocalizationsDe().wipeAllDataConfirmButton, equals('LÖSCHEN'));
+      expect(AppLocalizationsIt().exportingBackupProgress, contains('AES-256'));
+    });
+  });
+
+  group('SecureStorageService Encrypted Backup & Restore Tests', () {
+    setUp(() {
+      FlutterSecureStorage.setMockInitialValues({});
+    });
+
+    test('exports encrypted backup (v2) in Isolate and restores correctly', () async {
+      final storage = SecureStorageService();
+      final item1 = VaultItem(
+        id: 'item-1',
+        title: 'Secret Login',
+        category: VaultCategory.login,
+        username: 'alice',
+        password: 'Password123!',
+      );
+      await storage.saveVaultItem(item1);
+
+      const backupPassword = 'StrongBackupPassword123!';
+      final backupPayload = await storage.exportEncryptedBackup(backupPassword);
+
+      expect(backupPayload, contains('"caveau_backup":"v2"'));
+      expect(backupPayload, contains('"salt":'));
+      expect(backupPayload, contains('"iv":'));
+      expect(backupPayload, contains('"data":'));
+
+      // Clear storage to test restore
+      await storage.clearAllData();
+      final emptyItems = await storage.getAllVaultItems();
+      expect(emptyItems, isEmpty);
+
+      // Restore from backup in Isolate
+      final restoredCount = await storage.importEncryptedBackup(backupPayload, backupPassword);
+      expect(restoredCount, equals(1));
+
+      final restoredItems = await storage.getAllVaultItems();
+      expect(restoredItems.length, equals(1));
+      expect(restoredItems.first.title, equals('Secret Login'));
+      expect(restoredItems.first.username, equals('alice'));
+      expect(restoredItems.first.password, equals('Password123!'));
+    });
+
+    test('importing v2 backup with incorrect password throws FormatException', () async {
+      final storage = SecureStorageService();
+      final item = VaultItem(
+        id: 'item-2',
+        title: 'Bank Account',
+        category: VaultCategory.card,
+      );
+      await storage.saveVaultItem(item);
+
+      final payload = await storage.exportEncryptedBackup('CorrectPassword123!');
+
+      expect(
+        () async => await storage.importEncryptedBackup(payload, 'WrongPassword456!'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('supports backward compatibility with legacy v1 backups', () async {
+      final storage = SecureStorageService();
+      await storage.clearAllData();
+
+      // Create a legacy v1 backup payload
+      const legacyPassword = 'LegacyPassword2024';
+      final legacyPayload = jsonEncode({
+        'version': '1.0',
+        'exportedAt': '2024-01-01T00:00:00.000Z',
+        'items': [
+          VaultItem(
+            id: 'legacy-item-1',
+            title: 'Legacy Note',
+            category: VaultCategory.note,
+            notes: 'Encrypted legacy note content',
+          ).toJson(),
+        ],
+      });
+
+      final keyBytes = sha256.convert(utf8.encode(legacyPassword)).bytes;
+      final plaintextBytes = utf8.encode(legacyPayload);
+      final encryptedBytes = List<int>.generate(
+        plaintextBytes.length,
+        (i) => plaintextBytes[i] ^ keyBytes[i % keyBytes.length],
+      );
+
+      final checksum = sha256.convert(encryptedBytes).toString();
+      final v1BackupEnvelope = jsonEncode({
+        'caveau_backup': 'v1',
+        'data': base64Encode(encryptedBytes),
+        'checksum': checksum,
+      });
+
+      // Restore legacy v1 backup
+      final importedCount = await storage.importEncryptedBackup(v1BackupEnvelope, legacyPassword);
+      expect(importedCount, equals(1));
+
+      final items = await storage.getAllVaultItems();
+      expect(items.length, equals(1));
+      expect(items.first.title, equals('Legacy Note'));
+      expect(items.first.notes, equals('Encrypted legacy note content'));
     });
   });
 

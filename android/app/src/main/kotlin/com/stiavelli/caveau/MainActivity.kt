@@ -1,4 +1,4 @@
-package com.example.caveau
+package com.stiavelli.caveau
 
 import android.os.Bundle
 import android.view.WindowManager
@@ -44,4 +44,3 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 }
-
