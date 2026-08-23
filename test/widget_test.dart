@@ -749,11 +749,22 @@ void main() {
     expect(find.text('Le password di backup non corrispondono'), findsOneWidget);
   });
 
-  testWidgets('CaveauApp activates PrivacyShield when screen recording is detected', (WidgetTester tester) async {
+  testWidgets('CaveauApp activates PrivacyShield when screen recording is detected and privacyScreenEnabled is true', (WidgetTester tester) async {
     final mockScreenSec = _MockScreenSecurityService();
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(
+      initialSettings: const SecuritySettings(privacyScreenEnabled: true),
+    );
     await tester.pumpWidget(
-      CaveauRoot(
-        screenSecurityService: mockScreenSec,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(
+          screenSecurityService: mockScreenSec,
+        ),
       ),
     );
     await tester.pump();
@@ -773,6 +784,36 @@ void main() {
     await tester.pump();
 
     // Verify PrivacyShield overlay has been removed
+    expect(find.text('Caveau Protetto'), findsNothing);
+    mockScreenSec.dispose();
+  });
+
+  testWidgets('CaveauApp does not activate PrivacyShield by default when screen recording is detected (default: disabled)', (WidgetTester tester) async {
+    final mockScreenSec = _MockScreenSecurityService();
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(); // default privacyScreenEnabled is false
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(
+          screenSecurityService: mockScreenSec,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Verify initial state: PrivacyShield is not active
+    expect(find.text('Caveau Protetto'), findsNothing);
+
+    // Simulate screen recording start
+    mockScreenSec.emitCapture(true);
+    await tester.pump();
+
+    // Verify PrivacyShield overlay remains inactive because privacyScreenEnabled is false by default
     expect(find.text('Caveau Protetto'), findsNothing);
     mockScreenSec.dispose();
   });
@@ -1441,6 +1482,12 @@ class _TestSettingsProvider extends SettingsProvider {
   @override
   Future<void> updateAutoLock(int seconds) async {
     _testSettings = _testSettings.copyWith(autoLockSeconds: seconds);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> updatePrivacyScreen(bool enabled) async {
+    _testSettings = _testSettings.copyWith(privacyScreenEnabled: enabled);
     notifyListeners();
   }
 

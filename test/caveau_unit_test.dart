@@ -101,11 +101,11 @@ void main() {
   });
 
   group('SecuritySettings Tests', () {
-    test('default settings have autoLockSeconds set to 30 seconds and languageCode it', () {
+    test('default settings have autoLockSeconds set to 30 seconds, privacyScreenEnabled false and languageCode it', () {
       const settings = SecuritySettings();
       expect(settings.autoLockSeconds, equals(30));
       expect(settings.biometricsEnabled, isTrue);
-      expect(settings.privacyScreenEnabled, isTrue);
+      expect(settings.privacyScreenEnabled, isFalse);
       expect(settings.clipboardClearSeconds, equals(30));
       expect(settings.languageCode, equals('it'));
     });
