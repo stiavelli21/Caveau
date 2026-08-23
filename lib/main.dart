@@ -50,12 +50,14 @@ class CaveauRoot extends StatelessWidget {
   final SecureStorageService? storageService;
   final AuthService? authService;
   final ScreenSecurityService? screenSecurityService;
+  final DateTime Function()? clock;
 
   const CaveauRoot({
     super.key,
     this.storageService,
     this.authService,
     this.screenSecurityService,
+    this.clock,
   });
 
   @override
@@ -63,6 +65,7 @@ class CaveauRoot extends StatelessWidget {
     // Instantiate or fallback to production services
     final effectiveStorage = storageService ?? SecureStorageService();
     final effectiveAuth = authService ?? AuthService(storageService: effectiveStorage);
+    final effectiveClock = clock ?? (() => DateTime.now());
 
     return MultiProvider(
       providers: [
@@ -71,6 +74,7 @@ class CaveauRoot extends StatelessWidget {
           create: (_) => AuthProvider(
             authService: effectiveAuth,
             storageService: effectiveStorage,
+            clock: effectiveClock,
           )..checkInitialState(),
         ),
         // User settings & localization provider
@@ -88,6 +92,7 @@ class CaveauRoot extends StatelessWidget {
       ],
       child: CaveauApp(
         screenSecurityService: screenSecurityService,
+        clock: effectiveClock,
       ),
     );
   }
@@ -97,10 +102,12 @@ class CaveauRoot extends StatelessWidget {
 /// and screen recording events to enforce auto-lock intervals and activate the [PrivacyShield] overlay.
 class CaveauApp extends StatefulWidget {
   final ScreenSecurityService? screenSecurityService;
+  final DateTime Function()? clock;
 
   const CaveauApp({
     super.key,
     this.screenSecurityService,
+    this.clock,
   });
 
   @override
@@ -112,6 +119,9 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
 
   /// Timestamp recorded when the app transitioned into background/inactive state.
   DateTime? _pausedAt;
+
+  /// Timestamp recorded on the last detected user interaction in foreground.
+  DateTime? _lastInteractionTime;
 
   /// Tracks whether the app is currently hidden/backgrounded in the OS task switcher.
   bool _isBackgrounded = false;
@@ -165,10 +175,25 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  /// Tracks the previous AuthStatus to detect fresh unlock events.
+  AuthStatus? _lastAuthStatus;
+
+  /// Returns current time using injected [widget.clock] or system [DateTime.now].
+  DateTime _getNow() => widget.clock?.call() ?? DateTime.now();
+
+  /// Calculates the effective inactivity timeout in seconds.
+  /// When autoLockSeconds == 0 (Immediate), an inactivity threshold of 5 seconds is enforced in foreground.
+  int _getEffectiveInactivitySeconds(int autoLockSeconds) {
+    if (autoLockSeconds == 0) return 5;
+    return autoLockSeconds;
+  }
+
   /// Automatically locks the vault, dismisses open modal dialogs/sheets, and returns to LockScreen.
   void _lockVault() {
     _inactivityTimer?.cancel();
     _inactivityTimer = null;
+    _pausedAt = null;
+    _lastInteractionTime = null;
     _navigatorKey.currentState?.popUntil((route) => route.isFirst);
 
     if (!mounted) return;
@@ -179,7 +204,8 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
   }
 
   /// Resets and restarts the inactivity timer for the active session.
-  void _resetInactivityTimer() {
+  /// If [customDurationSeconds] is provided, sets the timer for that remaining duration.
+  void _resetInactivityTimer({int? customDurationSeconds}) {
     _inactivityTimer?.cancel();
     _inactivityTimer = null;
 
@@ -188,10 +214,10 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
     final settingsProvider = context.read<SettingsProvider>();
     final autoLockSecs = settingsProvider.settings.autoLockSeconds;
 
-    if (authProvider.status == AuthStatus.authenticated &&
-        autoLockSecs > 0 &&
-        !_isBackgrounded) {
-      _inactivityTimer = Timer(Duration(seconds: autoLockSecs), _lockVault);
+    if (authProvider.status == AuthStatus.authenticated && !_isBackgrounded) {
+      _lastInteractionTime = _getNow();
+      final timeoutSecs = customDurationSeconds ?? _getEffectiveInactivitySeconds(autoLockSecs);
+      _inactivityTimer = Timer(Duration(seconds: timeoutSecs), _lockVault);
     }
   }
 
@@ -205,20 +231,26 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
 
     // Handle transitions to background or multitasking inactive mode
     if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden) {
-      _pausedAt = DateTime.now();
       _inactivityTimer?.cancel();
       _inactivityTimer = null;
       setState(() {
         _isBackgrounded = true;
       });
 
-      // Immediate auto-lock (autoLockSeconds == 0)
-      if (settings.autoLockSeconds == 0 &&
-          authProvider.status == AuthStatus.authenticated) {
-        _lockVault();
+      if (authProvider.status == AuthStatus.authenticated) {
+        _pausedAt = _getNow();
+        // Immediate auto-lock (autoLockSeconds == 0)
+        if (settings.autoLockSeconds == 0) {
+          _lockVault();
+        }
       }
+    } else if (state == AppLifecycleState.inactive) {
+      // Inactive is an ephemeral state (e.g. system biometric dialog, notification shade).
+      // We obscure screen content for privacy without treating it as app backgrounding.
+      setState(() {
+        _isBackgrounded = true;
+      });
     } else if (state == AppLifecycleState.resumed) {
       // Returned to foreground
       setState(() {
@@ -234,18 +266,36 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
         }
       });
 
-      // Check if elapsed background time exceeds configured auto-lock threshold
-      if (_pausedAt != null &&
-          authProvider.status == AuthStatus.authenticated &&
-          settings.autoLockSeconds > 0) {
-        final elapsed = DateTime.now().difference(_pausedAt!).inSeconds;
-        if (elapsed >= settings.autoLockSeconds) {
-          _lockVault();
+      // Check if elapsed background or total inactivity time exceeds auto-lock threshold
+      // ONLY if the app was authenticated before going to background (_pausedAt != null).
+      if (authProvider.status == AuthStatus.authenticated) {
+        if (_pausedAt != null) {
+          final now = _getNow();
+          if (settings.autoLockSeconds == 0) {
+            _lockVault();
+          } else {
+            final timeout = settings.autoLockSeconds;
+            final elapsedInBackground = now.difference(_pausedAt!).inSeconds;
+            final elapsedSinceLastActivity = _lastInteractionTime != null
+                ? now.difference(_lastInteractionTime!).inSeconds
+                : elapsedInBackground;
+
+            if (elapsedInBackground >= timeout ||
+                elapsedSinceLastActivity >= timeout) {
+              _lockVault();
+            } else {
+              final remaining = timeout - elapsedSinceLastActivity;
+              _resetInactivityTimer(
+                customDurationSeconds: remaining > 0 ? remaining : timeout,
+              );
+            }
+          }
         } else {
-          _resetInactivityTimer();
+          // Returning from an ephemeral inactive state (such as biometric prompt)
+          if (_inactivityTimer == null || !_inactivityTimer!.isActive) {
+            _resetInactivityTimer();
+          }
         }
-      } else if (authProvider.status == AuthStatus.authenticated) {
-        _resetInactivityTimer();
       }
       _pausedAt = null;
     }
@@ -257,10 +307,25 @@ class _CaveauAppState extends State<CaveauApp> with WidgetsBindingObserver {
     final settingsProvider = context.watch<SettingsProvider>();
     final privacyEnabled = settingsProvider.settings.privacyScreenEnabled;
 
-    // Manage in-app inactivity auto-lock timer
+    // Detect fresh authentication / unlock transition
     if (authProvider.status == AuthStatus.authenticated &&
-        settingsProvider.settings.autoLockSeconds > 0 &&
-        !_isBackgrounded) {
+        _lastAuthStatus != AuthStatus.authenticated) {
+      _pausedAt = null;
+      _lastInteractionTime = _getNow();
+      _inactivityTimer?.cancel();
+      _inactivityTimer = null;
+      _resetInactivityTimer();
+    } else if (authProvider.status != AuthStatus.authenticated &&
+        _lastAuthStatus == AuthStatus.authenticated) {
+      _pausedAt = null;
+      _lastInteractionTime = null;
+      _inactivityTimer?.cancel();
+      _inactivityTimer = null;
+    }
+    _lastAuthStatus = authProvider.status;
+
+    // Manage in-app inactivity auto-lock timer
+    if (authProvider.status == AuthStatus.authenticated && !_isBackgrounded) {
       if (_inactivityTimer == null || !_inactivityTimer!.isActive) {
         _resetInactivityTimer();
       }

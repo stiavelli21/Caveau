@@ -1063,6 +1063,222 @@ void main() {
     mockScreenSec.dispose();
   });
 
+  testWidgets('Inactivity auto-locks vault after 5 seconds when autoLockSeconds is set to 0 (Immediate)', (WidgetTester tester) async {
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(initialSettings: const SecuritySettings(autoLockSeconds: 0));
+    final mockScreenSec = _MockScreenSecurityService();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(screenSecurityService: mockScreenSec),
+      ),
+    );
+
+    await tester.pump();
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+    expect(find.byType(VaultHomeScreen), findsOneWidget);
+
+    // Wait 3 seconds (less than 5s)
+    await tester.pump(const Duration(seconds: 3));
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Wait another 3 seconds (total 6s > 5s)
+    await tester.pump(const Duration(seconds: 3));
+    expect(authProvider.status, equals(AuthStatus.locked));
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    mockScreenSec.dispose();
+  });
+
+  Future<void> simulateBackground(WidgetTester tester) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+  }
+
+  Future<void> simulateResume(WidgetTester tester) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+  }
+
+  testWidgets('Backgrounding app with autoLockSeconds: 0 immediately locks the vault', (WidgetTester tester) async {
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(initialSettings: const SecuritySettings(autoLockSeconds: 0));
+    final mockScreenSec = _MockScreenSecurityService();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(screenSecurityService: mockScreenSec),
+      ),
+    );
+
+    await tester.pump();
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Put app into background via standard lifecycle transition
+    await simulateBackground(tester);
+    expect(authProvider.status, equals(AuthStatus.locked));
+
+    // Resume app
+    await simulateResume(tester);
+    expect(authProvider.status, equals(AuthStatus.locked));
+    expect(find.byType(LockScreen), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    mockScreenSec.dispose();
+  });
+
+  testWidgets('Backgrounding app for longer than autoLockSeconds locks the vault on resume', (WidgetTester tester) async {
+    var simulatedTime = DateTime(2026, 1, 1, 12, 0, 0);
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(initialSettings: const SecuritySettings(autoLockSeconds: 15));
+    final mockScreenSec = _MockScreenSecurityService();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(
+          screenSecurityService: mockScreenSec,
+          clock: () => simulatedTime,
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Transition to background
+    await simulateBackground(tester);
+    // In background, autoLockSeconds > 0 does not lock immediately
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Wait 16 seconds in background (> 15s)
+    simulatedTime = simulatedTime.add(const Duration(seconds: 16));
+    await tester.pump(const Duration(seconds: 16));
+
+    // Resume app
+    await simulateResume(tester);
+    expect(authProvider.status, equals(AuthStatus.locked));
+    expect(find.byType(LockScreen), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    mockScreenSec.dispose();
+  });
+
+  testWidgets('Backgrounding app when combined elapsed inactivity exceeds autoLockSeconds locks on resume', (WidgetTester tester) async {
+    var simulatedTime = DateTime(2026, 1, 1, 12, 0, 0);
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(initialSettings: const SecuritySettings(autoLockSeconds: 15));
+    final mockScreenSec = _MockScreenSecurityService();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(
+          screenSecurityService: mockScreenSec,
+          clock: () => simulatedTime,
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Inactivity in foreground for 10s
+    simulatedTime = simulatedTime.add(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 10));
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Transition to background for 6s (total inactivity 10s + 6s = 16s > 15s)
+    await simulateBackground(tester);
+    simulatedTime = simulatedTime.add(const Duration(seconds: 6));
+    await tester.pump(const Duration(seconds: 6));
+
+    // Resume app
+    await simulateResume(tester);
+    expect(authProvider.status, equals(AuthStatus.locked));
+    expect(find.byType(LockScreen), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    mockScreenSec.dispose();
+  });
+
+  testWidgets('Backgrounding app and resuming before autoLockSeconds expires resumes with remaining inactivity time', (WidgetTester tester) async {
+    var simulatedTime = DateTime(2026, 1, 1, 12, 0, 0);
+    final authProvider = _TestInactivityAuthProvider();
+    final settingsProvider = _TestSettingsProvider(initialSettings: const SecuritySettings(autoLockSeconds: 15));
+    final mockScreenSec = _MockScreenSecurityService();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+          ChangeNotifierProvider<VaultProvider>(create: (_) => VaultProvider()),
+        ],
+        child: CaveauApp(
+          screenSecurityService: mockScreenSec,
+          clock: () => simulatedTime,
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Inactivity in foreground for 5s
+    simulatedTime = simulatedTime.add(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 5));
+
+    // Transition to background for 5s (total 10s < 15s)
+    await simulateBackground(tester);
+    simulatedTime = simulatedTime.add(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 5));
+
+    // Resume app (10s total inactivity, 5s remaining)
+    await simulateResume(tester);
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Wait 3 seconds in foreground (total 13s < 15s)
+    simulatedTime = simulatedTime.add(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 3));
+    expect(authProvider.status, equals(AuthStatus.authenticated));
+
+    // Wait 3 more seconds (total 16s > 15s)
+    simulatedTime = simulatedTime.add(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 3));
+    expect(authProvider.status, equals(AuthStatus.locked));
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    mockScreenSec.dispose();
+  });
+
   testWidgets('SettingsScreen wipe all data button says ELIMINA and prompts for Master PIN before wiping', (WidgetTester tester) async {
     final authProvider = _TestInactivityAuthProvider();
     final settingsProvider = _TestSettingsProvider();

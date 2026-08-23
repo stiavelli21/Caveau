@@ -952,7 +952,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get clipboardPickerTitle => 'Timeout Svuotamento Appunti';
 
   @override
-  String get autoLockImmediate => 'Immediato (all\'uscita)';
+  String get autoLockImmediate => 'Immediato';
 
   @override
   String get autoLock15s => 'Dopo 15 secondi';
@@ -1709,7 +1709,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clipboardPickerTitle => 'Clipboard Auto-Clear Timeout';
 
   @override
-  String get autoLockImmediate => 'Immediately on exit';
+  String get autoLockImmediate => 'Immediate';
 
   @override
   String get autoLock15s => 'After 15 seconds';
@@ -2466,7 +2466,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get clipboardPickerTitle => 'Tiempo de Limpieza del Portapapeles';
 
   @override
-  String get autoLockImmediate => 'Inmediato (al salir)';
+  String get autoLockImmediate => 'Inmediato';
 
   @override
   String get autoLock15s => 'Tras 15 segundos';
@@ -3223,7 +3223,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get clipboardPickerTitle => 'Délai d\'Effacement du Presse-papiers';
 
   @override
-  String get autoLockImmediate => 'Immédiat (à la sortie)';
+  String get autoLockImmediate => 'Immédiat';
 
   @override
   String get autoLock15s => 'Après 15 secondes';
@@ -3980,7 +3980,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get clipboardPickerTitle => 'Zwischenablage-Löschintervall';
 
   @override
-  String get autoLockImmediate => 'Sofort beim Verlassen';
+  String get autoLockImmediate => 'Sofort';
 
   @override
   String get autoLock15s => 'Nach 15 Sekunden';
