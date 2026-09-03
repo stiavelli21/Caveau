@@ -100,6 +100,76 @@ void main() {
     });
   });
 
+  group('VaultItem Sorting & Comparison Tests', () {
+    test('compareTitles sorts alphabetically with lowercase preceding uppercase (a A b B c C)', () {
+      final list = ['B', 'b', 'A', 'a', 'C', 'c'];
+      list.sort(VaultItem.compareTitles);
+      expect(list, equals(['a', 'A', 'b', 'B', 'c', 'C']));
+    });
+
+    test('compareTitles sorts words naturally with lowercase preceding uppercase on matching letters', () {
+      final words = [
+        'Bancomat',
+        'apple',
+        'Amazon',
+        'banana',
+        'Apple',
+        'amazon',
+        'bancomat',
+      ];
+      words.sort(VaultItem.compareTitles);
+      expect(words, equals([
+        'amazon',
+        'Amazon',
+        'apple',
+        'Apple',
+        'banana',
+        'bancomat',
+        'Bancomat',
+      ]));
+    });
+
+    test('compareTitles handles case differences inside words', () {
+      final titles = ['PayPal', 'Paypal', 'payPal', 'paypal'];
+      titles.sort(VaultItem.compareTitles);
+      expect(titles, equals(['paypal', 'payPal', 'Paypal', 'PayPal']));
+    });
+
+    test('compareItems pins favorites to top and sorts each section alphabetically', () {
+      final item1 = VaultItem(id: '1', title: 'Google', category: VaultCategory.login, isFavorite: false);
+      final item2 = VaultItem(id: '2', title: 'apple', category: VaultCategory.login, isFavorite: true);
+      final item3 = VaultItem(id: '3', title: 'Amazon', category: VaultCategory.login, isFavorite: true);
+      final item4 = VaultItem(id: '4', title: 'amazon', category: VaultCategory.login, isFavorite: false);
+      final item5 = VaultItem(id: '5', title: 'Apple', category: VaultCategory.login, isFavorite: false);
+      final item6 = VaultItem(id: '6', title: 'bancomat', category: VaultCategory.login, isFavorite: false);
+
+      final List<VaultItem> items = [item1, item2, item3, item4, item5, item6];
+      items.sort(VaultItem.compareItems);
+
+      // Favorites first (sorted alphabetically: Amazon, apple)
+      expect(items[0].id, equals('3')); // Amazon (fav)
+      expect(items[1].id, equals('2')); // apple (fav)
+      // Non-favorites next (sorted alphabetically: amazon, Apple, bancomat, Google)
+      expect(items[2].id, equals('4')); // amazon
+      expect(items[3].id, equals('5')); // Apple
+      expect(items[4].id, equals('6')); // bancomat
+      expect(items[5].id, equals('1')); // Google
+    });
+
+    test('compareItems falls back to updatedAt descending when titles and favorite status match', () {
+      final older = DateTime.now().subtract(const Duration(minutes: 5));
+      final newer = DateTime.now();
+      final itemOld = VaultItem(id: 'old', title: 'Test', category: VaultCategory.login, isFavorite: false, updatedAt: older);
+      final itemNew = VaultItem(id: 'new', title: 'Test', category: VaultCategory.login, isFavorite: false, updatedAt: newer);
+
+      final List<VaultItem> items = [itemOld, itemNew];
+      items.sort(VaultItem.compareItems);
+
+      expect(items[0].id, equals('new'));
+      expect(items[1].id, equals('old'));
+    });
+  });
+
   group('SecuritySettings Tests', () {
     test('default settings have autoLockSeconds set to 30 seconds, privacyScreenEnabled false and languageCode it', () {
       const settings = SecuritySettings();

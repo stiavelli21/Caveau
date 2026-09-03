@@ -198,13 +198,8 @@ class SecureStorageService {
       await _saveVaultIndex(validIds);
     }
 
-    // Sort order: Favorites pinned to top, then sorted descending by update timestamp
-    items.sort((a, b) {
-      if (a.isFavorite != b.isFavorite) {
-        return a.isFavorite ? -1 : 1;
-      }
-      return b.updatedAt.compareTo(a.updatedAt);
-    });
+    // Sort order: Favorites pinned to top, then alphabetical by title (lowercase first)
+    items.sort(VaultItem.compareItems);
 
     return items;
   }

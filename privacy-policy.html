@@ -416,9 +416,12 @@
         </div>
         <div class="card-small">
           <h3 data-i18n="sec2_c2_title">Hybrid Authentication</h3>
-          <p data-i18n="sec2_c2_desc">Biometric access (Face ID, Fingerprint) with fallback to a Master PIN protected by iterative cryptographic hashing (5,000 rounds SHA-256) and a 256-bit salt.</p>
+          <p data-i18n="sec2_c2_desc">Biometric access (Face ID, Fingerprint) with fallback to a Master PIN protected by iterative cryptographic hashing (200,000 rounds SHA-256) and a 256-bit salt.</p>
         </div>
       </div>
+      <p data-i18n="sec2_bio_notice" style="margin-top: 16px;">
+        <strong>Biometric Privacy:</strong> Caveau never has access to, collects, or stores your raw biometric data (such as fingerprint scans or facial geometry). Biometric authentication is handled exclusively by your device's operating system (e.g., Android BiometricPrompt, iOS Secure Enclave), which only confirms authentication success or failure.
+      </p>
     </div>
 
     <!-- SECTION 3: BACKUP & RESPONSIBILITY -->
@@ -509,7 +512,8 @@
         sec2_c1_title: "Hardware Keystore",
         sec2_c1_desc: "Hardware-backed <span class=\"code-pill\">AES-256</span> encryption isolated within the device's secure element / Secure Enclave.",
         sec2_c2_title: "Hybrid Authentication",
-        sec2_c2_desc: "Biometric access (Face ID, Fingerprint) with fallback to a Master PIN protected by iterative cryptographic hashing (5,000 rounds SHA-256) and a 256-bit salt.",
+        sec2_c2_desc: "Biometric access (Face ID, Fingerprint) with fallback to a Master PIN protected by iterative cryptographic hashing (200,000 rounds SHA-256) and a 256-bit salt.",
+        sec2_bio_notice: "<strong>Biometric Privacy:</strong> Caveau never has access to, collects, or stores your raw biometric data (such as fingerprint scans or facial geometry). Biometric authentication is handled exclusively by your device's operating system (e.g., Android BiometricPrompt, iOS Secure Enclave), which only confirms authentication success or failure.",
         sec3_title: "Backups, Data Loss & Limitation of Liability",
         sec3_p1: "Because Caveau is strictly offline and operates without central servers:",
         sec3_alert1_title: "No Password Recovery Available",
@@ -544,7 +548,8 @@
         sec2_c1_title: "Android Keystore / iOS Keychain",
         sec2_c1_desc: "Cifratura hardware-backed <span class=\"code-pill\">AES-256</span> isolata a livello di chip di sicurezza del dispositivo.",
         sec2_c2_title: "Autenticazione Ibrida",
-        sec2_c2_desc: "Accesso biometrico (Face ID, Impronta) con fallback su PIN Master protetto da hash iterativo crittografico (5.000 round SHA-256) e Salt a 256-bit.",
+        sec2_c2_desc: "Accesso biometrico (Face ID, Impronta) con fallback su PIN Master protetto da hash iterativo crittografico (200.000 round SHA-256) e Salt a 256-bit.",
+        sec2_bio_notice: "<strong>Privacy Biometrica:</strong> Caveau non ha mai accesso, non raccoglie e non memorizza i dati biometrici grezzi dell'utente (come impronte digitali o scansioni del volto). L'autenticazione biometrica è gestita interamente dall'hardware sicuro del sistema operativo (es. Android BiometricPrompt, iOS Secure Enclave), che comunica all'app unicamente l'esito positivo o negativo dell'autenticazione.",
         sec3_title: "Backup, Perdita Dati e Limitazione di Responsabilità",
         sec3_p1: "Poiché Caveau è un'applicazione rigorosamente offline e priva di server:",
         sec3_alert1_title: "Nessun Recupero Password Disponibile",
@@ -579,7 +584,8 @@
         sec2_c1_title: "Android Keystore / iOS Keychain",
         sec2_c1_desc: "Cifrado <span class=\"code-pill\">AES-256</span> respaldado por hardware y aislado a nivel del chip de seguridad del dispositivo.",
         sec2_c2_title: "Autenticación Híbrida",
-        sec2_c2_desc: "Acceso biométrico (Face ID, huella digital) con respaldo de PIN Maestro protegido por hash iterativo (5.000 rondas SHA-256) y salt de 256 bits.",
+        sec2_c2_desc: "Acceso biométrico (Face ID, huella digital) con respaldo de PIN Maestro protegido por hash iterativo (200,000 rondas SHA-256) y salt de 256 bits.",
+        sec2_bio_notice: "<strong>Privacidad Biométrica:</strong> Caveau nunca tiene acceso, no recopila ni almacena los datos biométricos sin procesar del usuario (como huellas dactilares o escaneos faciales). La autenticación biométrica es gestionada exclusivamente por el hardware seguro del sistema operativo (ej. Android BiometricPrompt, iOS Secure Enclave), que solo confirma el éxito o fracaso de la autenticación.",
         sec3_title: "Copias de Seguridad, Pérdida de Datos y Limitación de Responsabilidad",
         sec3_p1: "Dado que Caveau es estrictamente offline y no cuenta con servidores centrales:",
         sec3_alert1_title: "Sin Recuperación de Contraseña Disponible",
@@ -614,7 +620,8 @@
         sec2_c1_title: "Android Keystore / iOS Keychain",
         sec2_c1_desc: "Chiffrement matériel <span class=\"code-pill\">AES-256</span> isolé au niveau de la puce de sécurité de l'appareil.",
         sec2_c2_title: "Authentification Hybride",
-        sec2_c2_desc: "Accès biométrique (Face ID, empreinte digitale) avec secours par Code PIN Principal protégé par hachage itératif (5 000 itérations SHA-256) et sel de 256 bits.",
+        sec2_c2_desc: "Accès biométrique (Face ID, empreinte digitale) avec secours par Code PIN Principal protégé par hachage itératif (200 000 itérations SHA-256) et sel de 256 bits.",
+        sec2_bio_notice: "<strong>Confidentialité Biométrique :</strong> Caveau n'a jamais accès, ne collecte et ne stocke aucune donnée biométrique brute de l'utilisateur (telle que les empreintes digitales ou la géométrie faciale). L'authentification biométrique est gérée exclusivement par le matériel sécurisé du système d'exploitation (ex. Android BiometricPrompt, iOS Secure Enclave), qui transmet uniquement le résultat de l'authentification.",
         sec3_title: "Sauvegardes, Perte de Données et Limitation de Responsabilité",
         sec3_p1: "Puisque Caveau est strictement hors ligne et sans serveur centralisé :",
         sec3_alert1_title: "Aucune Récupération de Mot de Passe Disponible",
@@ -649,7 +656,8 @@
         sec2_c1_title: "Android Keystore / iOS Keychain",
         sec2_c1_desc: "Hardware-gestützte <span class=\"code-pill\">AES-256</span>-Verschlüsselung, isoliert im Sicherheitschip des Geräts.",
         sec2_c2_title: "Hybride Authentifizierung",
-        sec2_c2_desc: "Biometrischer Zugriff (Face ID, Fingerabdruck) mit Fallback auf Master-PIN, geschützt durch iteratives Hashing (5.000 Runden SHA-256) und 256-Bit-Salt.",
+        sec2_c2_desc: "Biometrischer Zugriff (Face ID, Fingerabdruck) mit Fallback auf Master-PIN, geschützt durch iteratives Hashing (200.000 Runden SHA-256) und 256-Bit-Salt.",
+        sec2_bio_notice: "<strong>Biometrischer Datenschutz:</strong> Caveau hat niemals Zugriff auf Ihre rohen biometrischen Daten (wie Fingerabdrücke oder Gesichtserkennungsdaten), erfasst oder speichert diese nicht. Die biometrische Authentifizierung wird ausschließlich über die sichere Hardware des Betriebssystems (z. B. Android BiometricPrompt, iOS Secure Enclave) abgewickelt, die der App lediglich das Ergebnis der Autorisierung übermittelt.",
         sec3_title: "Backups, Datenverlust & Haftungsbeschränkung",
         sec3_p1: "Da Caveau streng offline arbeitet und keine Server besitzt:",
         sec3_alert1_title: "Keine Passwortwiederherstellung möglich",

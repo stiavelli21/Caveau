@@ -168,12 +168,7 @@ class VaultProvider extends ChangeNotifier {
       final updated = _items[index].copyWith(isFavorite: !_items[index].isFavorite);
       await _storageService.saveVaultItem(updated);
       _items[index] = updated;
-      _items.sort((a, b) {
-        if (a.isFavorite != b.isFavorite) {
-          return a.isFavorite ? -1 : 1;
-        }
-        return b.updatedAt.compareTo(a.updatedAt);
-      });
+      _items.sort(VaultItem.compareItems);
       notifyListeners();
     }
   }

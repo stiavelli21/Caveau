@@ -76,6 +76,7 @@ abstract class AppLocalizations {
   String pinWipeWarning(int remaining);
   String get autoWipeTriggered;
   String get autoWipeDialogTitle;
+  String get autoWipeRestartButton;
   String get currentPinInvalid;
 
   // --- Onboarding Screen ---
@@ -374,6 +375,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get autoWipeDialogTitle => 'Vault Cancellato';
+
+  @override
+  String get autoWipeRestartButton => 'Ricomincia';
 
   @override
   String get currentPinInvalid => '${AppBrandTerms.pinMaster} attuale non valido';
@@ -1133,6 +1137,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoWipeDialogTitle => 'Vault Wiped';
 
   @override
+  String get autoWipeRestartButton => 'Start Over';
+
+  @override
   String get currentPinInvalid => 'Invalid current ${AppBrandTerms.masterPin}';
 
   @override
@@ -1888,6 +1895,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get autoWipeDialogTitle => 'Vault Borrado';
+
+  @override
+  String get autoWipeRestartButton => 'Empezar de Nuevo';
 
   @override
   String get currentPinInvalid => '${AppBrandTerms.masterPin} actual no válido';
@@ -2647,6 +2657,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get autoWipeDialogTitle => 'Vault Supprimé';
 
   @override
+  String get autoWipeRestartButton => 'Recommencer';
+
+  @override
   String get currentPinInvalid => '${AppBrandTerms.masterPin} actuel non valide';
 
   @override
@@ -3402,6 +3415,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get autoWipeDialogTitle => 'Vault gelöscht';
+
+  @override
+  String get autoWipeRestartButton => 'Neu Beginnen';
 
   @override
   String get currentPinInvalid => 'Aktuelle ${AppBrandTerms.masterPin} ungültig';

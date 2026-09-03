@@ -459,9 +459,9 @@ class _AutoWipeNoticeScreen extends StatelessWidget {
                   Navigator.of(ctx).pop();
                   auth.acknowledgeAutoWipe();
                 },
-                child: const Text(
-                  'Ricomincia',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                child: Text(
+                  l10n.autoWipeRestartButton,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ),

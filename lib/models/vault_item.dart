@@ -289,4 +289,59 @@ class VaultItem {
   /// Deserializes a JSON string into a [VaultItem] instance.
   factory VaultItem.deserialize(String jsonString) =>
       VaultItem.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+
+  /// Compares two title strings alphabetically according to "Option A + Interpretation 2":
+  /// 1. Primary order: Case-insensitive alphabetical comparison (`toLowerCase()`).
+  /// 2. Secondary order (tie-breaker when case-insensitively identical):
+  ///    Character-by-character comparison where lowercase precedes uppercase
+  ///    (e.g., 'a' < 'A', 'b' < 'B').
+  static int compareTitles(String a, String b) {
+    final lowerA = a.toLowerCase();
+    final lowerB = b.toLowerCase();
+    final primary = lowerA.compareTo(lowerB);
+    if (primary != 0) {
+      return primary;
+    }
+
+    // Secondary order (case-sensitive tie-breaker):
+    // Compare character by character. If one is lowercase and the other is uppercase,
+    // lowercase comes first ('a' before 'A').
+    final minLen = a.length < b.length ? a.length : b.length;
+    for (int i = 0; i < minLen; i++) {
+      if (a[i] != b[i]) {
+        final aLower = a[i] == a[i].toLowerCase();
+        final bLower = b[i] == b[i].toLowerCase();
+        if (aLower && !bLower) return -1;
+        if (!aLower && bLower) return 1;
+        return a.codeUnitAt(i).compareTo(b.codeUnitAt(i));
+      }
+    }
+
+    return a.length.compareTo(b.length);
+  }
+
+  /// Compares two [VaultItem]s for display in Caveau (Option A + Interpretation 2):
+  /// 1. Pinned Favorites: Items with [isFavorite] == true precede non-favorites.
+  /// 2. Alphabetical order by [title] (case-insensitive primary, lowercase preceding uppercase secondary).
+  /// 3. Fallback to modification timestamp [updatedAt] descending, then [id].
+  static int compareItems(VaultItem a, VaultItem b) {
+    // 1. Favorites pinned to top
+    if (a.isFavorite != b.isFavorite) {
+      return a.isFavorite ? -1 : 1;
+    }
+
+    // 2. Alphabetical by title (lowercase first)
+    final titleComparison = compareTitles(a.title, b.title);
+    if (titleComparison != 0) {
+      return titleComparison;
+    }
+
+    // 3. Most recently updated first
+    final dateComparison = b.updatedAt.compareTo(a.updatedAt);
+    if (dateComparison != 0) {
+      return dateComparison;
+    }
+
+    return a.id.compareTo(b.id);
+  }
 }
