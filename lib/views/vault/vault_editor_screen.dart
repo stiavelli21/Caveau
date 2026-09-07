@@ -341,7 +341,6 @@ class _VaultEditorScreenState extends State<VaultEditorScreen> {
                       val == null || val.trim().isEmpty ? l10n.titleRequiredValidation : null,
                   decoration: InputDecoration(
                     labelText: '${l10n.titleLabel} *',
-                    hintText: 'Google, Netflix, Revolut...',
                     prefixIcon: const Icon(Icons.label_outline_rounded),
                   ),
                 ),

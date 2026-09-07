@@ -33,7 +33,7 @@ class SecuritySettings {
     this.clipboardClearSeconds = 30,
     this.failedAttempts = 0,
     this.lockoutUntil,
-    this.languageCode = 'it',
+    this.languageCode = 'en',
   });
 
   /// Creates a copy of this [SecuritySettings] instance with optional modified properties.
@@ -78,7 +78,7 @@ class SecuritySettings {
     lockoutUntil: json['lockoutUntil'] != null
         ? DateTime.tryParse(json['lockoutUntil'] as String)
         : null,
-    languageCode: json['languageCode'] as String? ?? 'it',
+    languageCode: json['languageCode'] as String? ?? 'en',
   );
 
   /// Serializes the settings object into a JSON string for secure storage.

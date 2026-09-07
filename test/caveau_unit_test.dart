@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -171,13 +172,13 @@ void main() {
   });
 
   group('SecuritySettings Tests', () {
-    test('default settings have autoLockSeconds set to 30 seconds, privacyScreenEnabled false and languageCode it', () {
+    test('default settings have autoLockSeconds set to 30 seconds, privacyScreenEnabled false and languageCode en', () {
       const settings = SecuritySettings();
       expect(settings.autoLockSeconds, equals(30));
       expect(settings.biometricsEnabled, isTrue);
       expect(settings.privacyScreenEnabled, isFalse);
       expect(settings.clipboardClearSeconds, equals(30));
-      expect(settings.languageCode, equals('it'));
+      expect(settings.languageCode, equals('en'));
     });
 
     test('serializes and deserializes security settings with custom language', () {
@@ -325,6 +326,47 @@ void main() {
       expect(AppLocalizations.supportedLanguages.length, equals(5));
       final codes = AppLocalizations.supportedLanguages.map((l) => l.code).toList();
       expect(codes, containsAll(['it', 'en', 'es', 'fr', 'de']));
+    });
+
+    test('resolveInitialLanguageCode matches supported locales and falls back to en', () {
+      // Supported locales match exactly
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('it')]), equals('it'));
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('en')]), equals('en'));
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('es')]), equals('es'));
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('fr')]), equals('fr'));
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('de')]), equals('de'));
+
+      // Case insensitivity
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('IT')]), equals('it'));
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('EN')]), equals('en'));
+
+      // Unsupported locales fallback to 'en'
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('ja')]), equals('en'));
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('pt')]), equals('en'));
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('ru')]), equals('en'));
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: [const Locale('zh')]), equals('en'));
+
+      // Priority resolution: first supported locale is chosen
+      expect(
+        AppLocalizations.resolveInitialLanguageCode(
+          locales: [const Locale('ja'), const Locale('fr'), const Locale('en')],
+        ),
+        equals('fr'),
+      );
+
+      // Single deviceLocale fallback
+      expect(AppLocalizations.resolveInitialLanguageCode(deviceLocale: const Locale('es')), equals('es'));
+      expect(AppLocalizations.resolveInitialLanguageCode(deviceLocale: const Locale('ko')), equals('en'));
+
+      // Empty list falls back to default 'en'
+      expect(AppLocalizations.resolveInitialLanguageCode(locales: []), equals('en'));
+    });
+
+    test('AppLocalizations delegate falls back to AppLocalizationsEn for unsupported locales', () async {
+      const delegate = AppLocalizations.delegate;
+      final loaded = await delegate.load(const Locale('ja'));
+      expect(loaded, isA<AppLocalizationsEn>());
+      expect(loaded.languageCode, equals('en'));
     });
 
     test('all 5 languages implement desktop and split-view strings without empty values', () {

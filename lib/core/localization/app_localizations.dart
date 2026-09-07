@@ -33,11 +33,14 @@ abstract class AppLocalizations {
 
   static AppLocalizations of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations) ??
-        AppLocalizationsIt();
+        AppLocalizationsEn();
   }
 
   static const LocalizationsDelegate<AppLocalizations> delegate =
       _AppLocalizationsDelegate();
+
+  /// Default global fallback language code when the user's system locale is unsupported.
+  static const String defaultFallbackLanguageCode = 'en';
 
   static const List<Locale> supportedLocales = [
     Locale('it'),
@@ -54,6 +57,47 @@ abstract class AppLocalizations {
     LanguageMetadata(code: 'fr', nativeName: 'Français', englishName: 'French', flag: '🇫🇷'),
     LanguageMetadata(code: 'de', nativeName: 'Deutsch', englishName: 'German', flag: '🇩🇪'),
   ];
+
+  /// Resolves the initial language code based on device preferences.
+  /// Iterates through the user's preferred locales on the device and returns the first
+  /// matching supported language code ('it', 'en', 'es', 'fr', 'de').
+  /// If no match is found, returns [defaultFallbackLanguageCode] ('en').
+  static String resolveInitialLanguageCode({
+    List<Locale>? locales,
+    Locale? deviceLocale,
+  }) {
+    if (locales != null && locales.isNotEmpty) {
+      for (final loc in locales) {
+        final code = loc.languageCode.toLowerCase();
+        if (supportedLanguages.any((l) => l.code == code)) {
+          return code;
+        }
+      }
+    } else if (deviceLocale != null) {
+      final code = deviceLocale.languageCode.toLowerCase();
+      if (supportedLanguages.any((l) => l.code == code)) {
+        return code;
+      }
+    } else {
+      try {
+        final systemLocales = WidgetsBinding.instance.platformDispatcher.locales;
+        for (final loc in systemLocales) {
+          final code = loc.languageCode.toLowerCase();
+          if (supportedLanguages.any((l) => l.code == code)) {
+            return code;
+          }
+        }
+        final singleLocale = WidgetsBinding.instance.platformDispatcher.locale;
+        final singleCode = singleLocale.languageCode.toLowerCase();
+        if (supportedLanguages.any((l) => l.code == singleCode)) {
+          return singleCode;
+        }
+      } catch (_) {
+        // Fallback for early startup or headless environments
+      }
+    }
+    return defaultFallbackLanguageCode;
+  }
 
   // --- Brand & General ---
   String get appName => AppBrandTerms.appName;
@@ -4136,6 +4180,8 @@ class _AppLocalizationsDelegate
   @override
   Future<AppLocalizations> load(Locale locale) {
     switch (locale.languageCode) {
+      case 'it':
+        return SynchronousFuture<AppLocalizations>(AppLocalizationsIt());
       case 'es':
         return SynchronousFuture<AppLocalizations>(AppLocalizationsEs());
       case 'fr':
@@ -4143,10 +4189,8 @@ class _AppLocalizationsDelegate
       case 'de':
         return SynchronousFuture<AppLocalizations>(AppLocalizationsDe());
       case 'en':
-        return SynchronousFuture<AppLocalizations>(AppLocalizationsEn());
-      case 'it':
       default:
-        return SynchronousFuture<AppLocalizations>(AppLocalizationsIt());
+        return SynchronousFuture<AppLocalizations>(AppLocalizationsEn());
     }
   }
 

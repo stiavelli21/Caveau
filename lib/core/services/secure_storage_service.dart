@@ -10,6 +10,7 @@ import 'package:pointycastle/export.dart';
 
 import '../../models/vault_item.dart';
 import '../../models/security_settings.dart';
+import '../localization/app_localizations.dart';
 
 /// Hardware-backed secure storage service for Caveau.
 ///
@@ -126,7 +127,9 @@ class SecureStorageService {
     } catch (_) {
       // Return default settings on read or parse failure
     }
-    return const SecuritySettings();
+    return SecuritySettings(
+      languageCode: AppLocalizations.resolveInitialLanguageCode(),
+    );
   }
 
   // ===========================================================================

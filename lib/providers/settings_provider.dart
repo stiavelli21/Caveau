@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/localization/app_localizations.dart';
 import '../core/services/secure_storage_service.dart';
 import '../models/security_settings.dart';
 
@@ -7,12 +8,18 @@ import '../models/security_settings.dart';
 /// Interacts directly with [SecureStorageService] to persist and reload settings asynchronously.
 class SettingsProvider extends ChangeNotifier {
   final SecureStorageService _storageService;
-  SecuritySettings _settings = const SecuritySettings();
+  SecuritySettings _settings;
   bool _isLoading = true;
 
-  /// Creates a [SettingsProvider] instance with optional storage injection.
-  SettingsProvider({SecureStorageService? storageService})
-      : _storageService = storageService ?? SecureStorageService();
+  /// Creates a [SettingsProvider] instance with optional storage injection and initial settings.
+  SettingsProvider({
+    SecureStorageService? storageService,
+    SecuritySettings? initialSettings,
+  })  : _storageService = storageService ?? SecureStorageService(),
+        _settings = initialSettings ??
+            SecuritySettings(
+              languageCode: AppLocalizations.resolveInitialLanguageCode(),
+            );
 
   /// Current active [SecuritySettings] in memory.
   SecuritySettings get settings => _settings;

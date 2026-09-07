@@ -36,8 +36,19 @@ Widget _buildTestApp({
 }) {
   final storage = SecureStorageService();
   final vp = vaultProvider ?? VaultProvider(storageService: storage);
-  final sp = settingsProvider ?? SettingsProvider(storageService: storage);
+  final sp = settingsProvider ??
+      SettingsProvider(
+        storageService: storage,
+        initialSettings: SecuritySettings(languageCode: locale),
+      );
   final ap = authProvider ?? AuthProvider(storageService: storage);
+
+  // In test environment, align the settingsProvider with the test app's requested locale ('it' by default)
+  if (settingsProvider != null &&
+      settingsProvider.settings.languageCode == AppLocalizations.defaultFallbackLanguageCode &&
+      locale != AppLocalizations.defaultFallbackLanguageCode) {
+    settingsProvider.updateLanguage(locale);
+  }
 
   return MultiProvider(
     providers: [
@@ -753,7 +764,7 @@ void main() {
     final mockScreenSec = _MockScreenSecurityService();
     final authProvider = _TestInactivityAuthProvider();
     final settingsProvider = _TestSettingsProvider(
-      initialSettings: const SecuritySettings(privacyScreenEnabled: true),
+      initialSettings: const SecuritySettings(privacyScreenEnabled: true, languageCode: 'it'),
     );
     await tester.pumpWidget(
       MultiProvider(
@@ -1473,7 +1484,7 @@ class _TestSettingsProvider extends SettingsProvider {
   SecuritySettings _testSettings;
 
   _TestSettingsProvider({SecuritySettings? initialSettings})
-      : _testSettings = initialSettings ?? const SecuritySettings(),
+      : _testSettings = initialSettings ?? const SecuritySettings(languageCode: 'it'),
         super();
 
   @override
