@@ -276,30 +276,36 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Interactive Search Bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (val) => vaultProvider.setSearchQuery(val),
-                decoration: InputDecoration(
-                  hintText: l10n.searchHint,
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear_rounded),
-                          onPressed: () {
-                            _searchController.clear();
-                            vaultProvider.setSearchQuery('');
-                          },
-                        )
-                      : null,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              // Interactive Search Bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                  onChanged: (val) => vaultProvider.setSearchQuery(val),
+                  decoration: InputDecoration(
+                    hintText: l10n.searchHint,
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded),
+                            onPressed: () {
+                              _searchController.clear();
+                              vaultProvider.setSearchQuery('');
+                            },
+                          )
+                        : null,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
                 ),
               ),
-            ),
 
             // Horizontal Filter Chips (All, Favorites, Category Filters)
             SingleChildScrollView(
@@ -368,6 +374,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                   : filteredItems.isEmpty
                       ? Center(
                           child: SingleChildScrollView(
+                            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                             padding: EdgeInsets.fromLTRB(
                               32,
                               32,
@@ -426,6 +433,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                           ),
                         )
                       : ListView.builder(
+                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: EdgeInsets.fromLTRB(
                             16,
                             8,
@@ -456,6 +464,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           ],
         ),
       ),
+    ),
       floatingActionButton: FloatingActionButton(
         tooltip: l10n.newItemFab,
         onPressed: () => _showAddCategoryPicker(context),
@@ -494,41 +503,46 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
           DesktopSidebar(width: sidebarWidth),
 
           // Middle Master Column: Search & Item List
-          SizedBox(
+          Container(
             width: masterWidth,
-            child: Container(
               decoration: const BoxDecoration(
                 border: Border(
                   right: BorderSide(color: AppColors.border),
                 ),
               ),
-              child: Column(
-                children: [
-                  // Top Search & Add Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: (val) => vaultProvider.setSearchQuery(val),
-                            decoration: InputDecoration(
-                              hintText: l10n.searchHint,
-                              prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                              suffixIcon: _searchController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear_rounded, size: 18),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        vaultProvider.setSearchQuery('');
-                                      },
-                                    )
-                                  : null,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: Column(
+                  children: [
+                    // Top Search & Add Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              textInputAction: TextInputAction.search,
+                              onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                              onChanged: (val) => vaultProvider.setSearchQuery(val),
+                              decoration: InputDecoration(
+                                hintText: l10n.searchHint,
+                                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear_rounded, size: 18),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          vaultProvider.setSearchQuery('');
+                                        },
+                                      )
+                                    : null,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              ),
                             ),
                           ),
-                        ),
                         const SizedBox(width: 10),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
@@ -590,6 +604,7 @@ class _VaultHomeScreenState extends State<VaultHomeScreen> {
                                 ),
                               )
                             : ListView.builder(
+                                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 itemCount: filteredItems.length,
                                 itemBuilder: (context, index) {

@@ -617,6 +617,43 @@ void main() {
     expect(find.descendant(of: fabFinder, matching: find.byType(Text)), findsNothing);
   });
 
+  testWidgets('VaultHomeScreen search bar gains focus on tap and unfocuses when tapping outside', (WidgetTester tester) async {
+    final mockStorage = SecureStorageService();
+    final vaultProvider = VaultProvider(storageService: mockStorage);
+    final settingsProvider = SettingsProvider(storageService: mockStorage);
+    final authProvider = AuthProvider(storageService: mockStorage);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        vaultProvider: vaultProvider,
+        settingsProvider: settingsProvider,
+        authProvider: authProvider,
+        child: const VaultHomeScreen(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final searchFieldFinder = find.byType(TextField);
+    expect(searchFieldFinder, findsOneWidget);
+
+    final editableTextFinder = find.byType(EditableText);
+    expect(editableTextFinder, findsOneWidget);
+    final EditableText editableText = tester.widget<EditableText>(editableTextFinder);
+    expect(editableText.focusNode.hasFocus, isFalse);
+
+    // Tap search field to focus
+    await tester.tap(searchFieldFinder);
+    await tester.pump();
+    expect(editableText.focusNode.hasFocus, isTrue);
+
+    // Tap outside search bar (on the background / list area)
+    await tester.tapAt(const Offset(200, 500));
+    await tester.pump();
+    expect(editableText.focusNode.hasFocus, isFalse);
+  });
+
   testWidgets('SettingsScreen renders Backup & Restore section with green border', (WidgetTester tester) async {
     final mockStorage = SecureStorageService();
     final authService = AuthService(storageService: mockStorage);
