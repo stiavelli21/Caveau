@@ -1,7 +1,7 @@
 name: caveau
-description: "A new Flutter project."
+description: "Password Vault"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.0.1+5
+version: 1.0.1+6
 repository: https://github.com/stiavelli21/Caveau.git
 
 environment:
@@ -65,4 +65,10 @@ flutter_launcher_icons:
     image_path: "assets/icons/caveau_icon.png"
   windows:
     generate: true
-    image_path: "assets/icons/caveau_icon.png"
+    image_path: "assets/icons/caveau_desktop_icon.png"
+  macos:
+    generate: true
+    image_path: "assets/icons/caveau_desktop_icon.png"
+  linux:
+    generate: true
+    image_path: "assets/icons/caveau_desktop_icon.png"
