@@ -176,3 +176,8 @@ When modifying or extending this application, you must **ALWAYS strictly adhere 
   - Adding or modifying fields in `VaultItem` must be resilient, providing sensible fallbacks/default values in `fromJson` to prevent exceptions when parsing older data.
   - Do not alter integrity verification methods (such as SHA-256 checksums) for legacy formats without maintaining backward compatibility.
 - **Mandatory Regression Testing**: Whenever storage or backup modules are touched, verify through automated tests that both newly exported backups and legacy backup files can be imported accurately without data loss.
+
+### 5. Git Workflow & Remote Synchronization
+- **Active Branching**: Ensure work is performed on the dedicated development branch (e.g., `develop`) rather than committing directly to `main`.
+- **Commit After Every Modification**: After each completed modification, feature, or bug fix, immediately perform a Git commit with a concise, descriptive message and push the changes to the corresponding GitHub branch.
+
